@@ -31,8 +31,8 @@ class AudioService {
   private isProcessingNext: boolean = false; // Prevent duplicate playNext calls
   private isProcessingPrevious: boolean = false; // Prevent duplicate playPrevious calls
   private playbackStatusSubscription: EventSubscription | null = null; // Native event subscription for playback status
-  private sleepTimerTimeout: ReturnType<typeof setTimeout> | null = null; // Sleep timer
-  private fadeOutTimeout: ReturnType<typeof setTimeout> | null = null; // Fade out timer
+  private sleepTimerTimeout: number | null = null; // Sleep timer (BackgroundTimer timeout ID)
+  private fadeOutTimeout: number | null = null; // Fade out timer (BackgroundTimer timeout ID)
   private playedTrackIds: Set<string> = new Set(); // Track IDs of played tracks (reciterId:surahNumber)
   private shuffleHistory: Track[] = []; // Recently played tracks in shuffle mode (max 5)
   private playedTracksOrder: Track[] = []; // Tracks played in order (for previous navigation)
@@ -779,13 +779,13 @@ class AudioService {
     console.log('[AudioService] Sleep timer set for', minutes, 'minutes');
 
     // Schedule fade-out to start 10 seconds before the timer ends
-    this.fadeOutTimeout = setTimeout(() => {
+    this.fadeOutTimeout = BackgroundTimer.setTimeout(() => {
       console.log('[AudioService] Starting sleep timer fade-out');
       this.fadeOut(fadeMs);
     }, timeUntilFade);
 
     // Schedule pause when timer completes
-    this.sleepTimerTimeout = setTimeout(() => {
+    this.sleepTimerTimeout = BackgroundTimer.setTimeout(() => {
       console.log('[AudioService] Sleep timer complete - pausing playback');
       this.pause();
       this.resetVolume();
@@ -800,11 +800,11 @@ class AudioService {
    */
   clearSleepTimer() {
     if (this.fadeOutTimeout) {
-      clearTimeout(this.fadeOutTimeout);
+      BackgroundTimer.clearTimeout(this.fadeOutTimeout);
       this.fadeOutTimeout = null;
     }
     if (this.sleepTimerTimeout) {
-      clearTimeout(this.sleepTimerTimeout);
+      BackgroundTimer.clearTimeout(this.sleepTimerTimeout);
       this.sleepTimerTimeout = null;
     }
     // Reset volume in case fade was in progress

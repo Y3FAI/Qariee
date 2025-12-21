@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { audioService } from '../services/audioService';
 
 interface SleepTimerContextType {
@@ -12,54 +11,14 @@ interface SleepTimerContextType {
 
 const SleepTimerContext = createContext<SleepTimerContextType | undefined>(undefined);
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: false,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-    shouldShowBanner: false,
-    shouldShowList: false,
-  }),
-});
 
 export function SleepTimerProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const notificationIdRef = useRef<string | null>(null);
   const endTimeRef = useRef<number | null>(null);
   const fadeStartedRef = useRef<boolean>(false);
 
-  // Initialize notification permissions and listeners
-  useEffect(() => {
-    // Request permissions on mount
-    requestPermissions();
-
-    // Listen for notifications when app is in foreground
-    const receivedSubscription = Notifications.addNotificationReceivedListener((notification) => {
-      if (notification.request.content.data?.type === 'sleep_timer') {
-        console.log('[SleepTimer] Notification received (foreground) - pausing audio');
-        handleTimerExpired();
-      }
-    });
-
-    // Listen for notification responses (when user taps notification or it triggers in background)
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      if (response.notification.request.content.data?.type === 'sleep_timer') {
-        console.log('[SleepTimer] Notification response received - pausing audio');
-        handleTimerExpired();
-      }
-    });
-
-    return () => {
-      receivedSubscription.remove();
-      responseSubscription.remove();
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
 
   const handleTimerExpired = async () => {
     // Fade out if not already fading
@@ -73,7 +32,6 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
     setIsActive(false);
     setRemainingSeconds(0);
     endTimeRef.current = null;
-    notificationIdRef.current = null;
     fadeStartedRef.current = false;
   };
 
@@ -95,19 +53,6 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
     };
   }, [isActive]);
 
-  const requestPermissions = async () => {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-
-    if (finalStatus !== 'granted') {
-      console.warn('[SleepTimer] Notification permissions not granted');
-    }
-  };
 
   // UI countdown - updates every second for display only (timer logic is in audioService)
   useEffect(() => {
@@ -137,10 +82,6 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
     const seconds = minutes * 60;
     const endTime = Date.now() + (seconds * 1000);
 
-    // Cancel any existing notification
-    if (notificationIdRef.current) {
-      await Notifications.cancelScheduledNotificationAsync(notificationIdRef.current);
-    }
 
     // Reset fade flag and volume
     fadeStartedRef.current = false;
@@ -152,27 +93,9 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
       setIsActive(false);
       setRemainingSeconds(0);
       endTimeRef.current = null;
-      notificationIdRef.current = null;
       fadeStartedRef.current = false;
     });
 
-    // Also schedule a notification as a backup/visual indicator
-    const notificationId = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Sleep Timer',
-        body: 'Sleep timer finished',
-        data: { type: 'sleep_timer' },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: seconds,
-        repeats: false,
-      },
-    });
-
-    console.log('[SleepTimer] Scheduled notification:', notificationId, 'for', minutes, 'minutes');
-
-    notificationIdRef.current = notificationId;
     endTimeRef.current = endTime;
     setRemainingSeconds(seconds);
     setIsActive(true);
@@ -182,11 +105,6 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
     // Clear timer in audio service
     audioService.clearSleepTimer();
 
-    // Cancel scheduled notification
-    if (notificationIdRef.current) {
-      await Notifications.cancelScheduledNotificationAsync(notificationIdRef.current);
-      notificationIdRef.current = null;
-    }
 
     // Clear interval
     if (intervalRef.current) {
