@@ -1,249 +1,297 @@
-import { View, Text, Modal, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { useTranslation } from 'react-i18next';
-import { useSleepTimer } from '../contexts/SleepTimerContext';
-import { isArabic } from '../services/i18n';
-import { getFontFamily } from '../utils/fonts';
-
-const { width } = Dimensions.get('window');
+import React from "react"
+import {
+    View,
+    Text,
+    Modal,
+    TouchableOpacity,
+    StyleSheet,
+    Platform,
+} from "react-native"
+import { Ionicons } from "@expo/vector-icons"
+import * as Haptics from "expo-haptics"
+import { useTranslation } from "react-i18next"
+import { useSleepTimer } from "../contexts/SleepTimerContext"
+import { isArabic } from "../services/i18n"
+import { getFontFamily } from "../utils/fonts"
 
 interface SleepTimerModalProps {
-  visible: boolean;
-  onClose: () => void;
-  primaryColor?: string;
-  secondaryColor?: string;
+    visible: boolean
+    onClose: () => void
+    primaryColor?: string
+    secondaryColor?: string
 }
 
-// Preset timer options in minutes
-const TIMER_OPTIONS = [5, 10, 15, 30, 45, 60];
+const TIMER_OPTIONS = [5, 10, 15, 30, 45, 60]
 
-/**
- * Format remaining seconds to display format (e.g., "15:30" or "1:05:30")
- */
 const formatTime = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+    const hours = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
 
-  if (hours > 0) {
-    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
+    if (hours > 0) {
+        return `${hours}:${mins.toString().padStart(2, "0")}:${secs
+            .toString()
+            .padStart(2, "0")}`
+    }
+    return `${mins}:${secs.toString().padStart(2, "0")}`
+}
 
 export default function SleepTimerModal({
-  visible,
-  onClose,
-  primaryColor = '#282828',
-  secondaryColor = '#404040',
+    visible,
+    onClose,
 }: SleepTimerModalProps) {
-  const { t } = useTranslation();
-  const { isActive, remainingSeconds, setTimer, clearTimer } = useSleepTimer();
-  const arabic = isArabic();
+    const { t } = useTranslation()
+    const { isActive, remainingSeconds, setTimer, clearTimer } = useSleepTimer()
+    const arabic = isArabic()
 
-  const handleSetTimer = (minutes: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setTimer(minutes);
-    onClose();
-  };
+    const handleSetTimer = (minutes: number) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        setTimer(minutes)
+        onClose()
+    }
 
-  const handleClearTimer = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    clearTimer();
-    onClose();
-  };
+    const handleClearTimer = () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+        clearTimer()
+        onClose()
+    }
 
-  const handleClose = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onClose();
-  };
+    const handleClose = () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+        onClose()
+    }
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      {/* Backdrop */}
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={handleClose}
-      >
-        {/* Modal Content */}
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
-          style={styles.modalContainer}
+    return (
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            onRequestClose={onClose}
+            statusBarTranslucent
         >
-          <LinearGradient
-            colors={['#1a1a1a', '#121212', '#0a0a0a']}
-            style={styles.modalContent}
-            locations={[0, 0.5, 1]}
-          >
-            {/* Header */}
-            <View style={styles.header}>
-              <Ionicons name="moon" size={28} color="#efefd5" />
-              <Text style={[styles.title, { fontFamily: getFontFamily(arabic, 'bold') }]}>
-                {t('sleep_timer')}
-              </Text>
-              <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                <Ionicons name="close" size={28} color="#efefd5" />
-              </TouchableOpacity>
-            </View>
-
-            {/* Active Timer Display */}
-            {isActive && (
-              <View style={styles.activeTimerContainer}>
-                <View style={styles.activeTimerContent}>
-                  <Ionicons name="time" size={32} color="#1DB954" />
-                  <Text style={[styles.activeTimerText, { fontFamily: getFontFamily(arabic, 'bold') }]}>
-                    {formatTime(remainingSeconds)}
-                  </Text>
-                </View>
-                <Text style={[styles.activeTimerLabel, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-                  {t('timer_active')}
-                </Text>
-              </View>
-            )}
-
-            {/* Timer Options Grid */}
-            <View style={styles.optionsGrid}>
-              {TIMER_OPTIONS.map((minutes) => (
+            <TouchableOpacity
+                style={styles.backdrop}
+                activeOpacity={1}
+                onPress={handleClose}
+            >
                 <TouchableOpacity
-                  key={minutes}
-                  style={styles.optionButton}
-                  onPress={() => handleSetTimer(minutes)}
-                  activeOpacity={0.7}
+                    activeOpacity={1}
+                    onPress={(e) => e.stopPropagation()}
+                    style={styles.sheetContainer}
                 >
-                  <View style={styles.optionContent}>
-                    <Text style={[styles.optionNumber, { fontFamily: getFontFamily(false, 'bold') }]}>
-                      {minutes}
-                    </Text>
-                    <Text style={[styles.optionLabel, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-                      {t('minutes')}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Text
+                            style={[
+                                styles.title,
+                                { fontFamily: getFontFamily(arabic, "bold") },
+                            ]}
+                        >
+                            {isActive ? t("timer_active") : t("sleep_timer")}
+                        </Text>
 
-            {/* Cancel Button (only show if timer is active) */}
-            {isActive && (
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleClearTimer}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.cancelButtonText, { fontFamily: getFontFamily(arabic, 'medium') }]}>
-                  {t('cancel_timer')}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </LinearGradient>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
-  );
+                        <TouchableOpacity
+                            onPress={handleClose}
+                            style={styles.closeButton}
+                            hitSlop={{
+                                top: 15,
+                                bottom: 15,
+                                left: 15,
+                                right: 15,
+                            }}
+                        >
+                            <Ionicons name="close" size={24} color="#8E8E93" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Active Timer Countdown (Minimalist Hero) */}
+                    {isActive && (
+                        <View style={styles.activeTimerContainer}>
+                            <Text
+                                style={[
+                                    styles.countdownText,
+                                    {
+                                        fontFamily: getFontFamily(
+                                            false,
+                                            "bold",
+                                        ),
+                                    },
+                                ]}
+                            >
+                                {formatTime(remainingSeconds)}
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.stopButton}
+                                onPress={handleClearTimer}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons
+                                    name="stop"
+                                    size={14}
+                                    color="#FF453A"
+                                    style={{ marginRight: 6 }}
+                                />
+                                <Text
+                                    style={[
+                                        styles.stopButtonText,
+                                        {
+                                            fontFamily: getFontFamily(
+                                                arabic,
+                                                "medium",
+                                            ),
+                                        },
+                                    ]}
+                                >
+                                    {t("cancel_timer")}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* Grid Layout */}
+                    <View style={styles.gridContainer}>
+                        {TIMER_OPTIONS.map((minutes) => (
+                            <TouchableOpacity
+                                key={minutes}
+                                style={[styles.gridItem, styles.shadow]}
+                                onPress={() => handleSetTimer(minutes)}
+                                activeOpacity={0.7}
+                            >
+                                {/* Text is direct child of Centered Grid Item now */}
+                                <Text
+                                    style={[
+                                        styles.optionTime,
+                                        {
+                                            fontFamily: getFontFamily(
+                                                false,
+                                                "bold",
+                                            ),
+                                        },
+                                    ]}
+                                >
+                                    {minutes}
+                                </Text>
+                                <Text
+                                    style={[
+                                        styles.optionLabel,
+                                        {
+                                            fontFamily: getFontFamily(
+                                                arabic,
+                                                "regular",
+                                            ),
+                                        },
+                                    ]}
+                                >
+                                    {arabic ? "دقيقة" : "min"}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </TouchableOpacity>
+        </Modal>
+    )
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    width: '100%',
-  },
-  modalContent: {
-    width: '100%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 22,
-    color: '#efefd5',
-    flex: 1,
-    textAlign: 'center',
-  },
-  activeTimerContainer: {
-    backgroundColor: 'rgba(29, 185, 84, 0.15)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(29, 185, 84, 0.3)',
-  },
-  activeTimerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  activeTimerText: {
-    fontSize: 36,
-    color: '#efefd5',
-    marginLeft: 12,
-  },
-  activeTimerLabel: {
-    fontSize: 14,
-    color: '#E0E0E0',
-    textAlign: 'center',
-  },
-  optionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  optionButton: {
-    width: (width - 60) / 3, // 3 columns with gaps
-    aspectRatio: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  optionContent: {
-    alignItems: 'center',
-  },
-  optionNumber: {
-    fontSize: 32,
-    color: '#efefd5',
-    marginBottom: 4,
-  },
-  optionLabel: {
-    fontSize: 14,
-    color: '#E0E0E0',
-    fontWeight: '500',
-  },
-  cancelButton: {
-    marginTop: 20,
-    backgroundColor: 'rgba(255, 59, 48, 0.2)',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.4)',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#FF3B30',
-  },
-});
+    backdrop: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
+        justifyContent: "flex-end",
+    },
+    sheetContainer: {
+        backgroundColor: "#1C1C1E", // Dark Grey Base
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingTop: 24,
+        paddingHorizontal: 20,
+        paddingBottom: Platform.OS === "ios" ? 40 : 24,
+        width: "100%",
+        alignSelf: "center",
+    },
+    header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 24,
+    },
+    title: {
+        fontSize: 20,
+        color: "#FFFFFF",
+        letterSpacing: 0.5,
+    },
+    closeButton: {
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderRadius: 20,
+        padding: 6,
+    },
+
+    // Active Timer
+    activeTimerContainer: {
+        alignItems: "center",
+        marginBottom: 32,
+        marginTop: 8,
+    },
+    countdownText: {
+        fontSize: 56,
+        color: "#FFFFFF",
+        marginBottom: 16,
+        fontVariant: ["tabular-nums"],
+    },
+    stopButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255, 69, 58, 0.15)",
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+    },
+    stopButtonText: {
+        color: "#FF453A",
+        fontSize: 14,
+    },
+
+    // Grid
+    gridContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        gap: 12,
+    },
+    gridItem: {
+        width: "30%", // Fits 3 items perfectly
+        aspectRatio: 1.25, // Slightly rectangular
+        backgroundColor: "#2C2C2E",
+        borderRadius: 16,
+
+        // Critical for centering:
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    // Shadow Logic
+    shadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+            },
+            android: {
+                elevation: 6,
+            },
+        }),
+    },
+    optionTime: {
+        fontSize: 28,
+        color: "#FFFFFF",
+        marginBottom: 4, // Slight gap between number and text
+        textAlign: "center",
+        lineHeight: 34, // Ensures vertical alignment is predictable
+    },
+    optionLabel: {
+        fontSize: 13,
+        color: "#98989D",
+        textAlign: "center",
+    },
+})

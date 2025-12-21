@@ -4,7 +4,6 @@ import { downloadService } from './downloadService';
 import MediaControl, { Command, PlaybackState as MediaPlaybackState } from 'expo-media-control';
 import { getReciterPhotoUrl } from '../constants/config';
 import * as Linking from 'expo-linking';
-import BackgroundTimer from 'react-native-background-timer';
 
 export interface Track {
   reciterId: string;
@@ -397,50 +396,29 @@ class AudioService {
       // Replace and play
       console.log('[AudioService] 🔁 play() - Replacing audio source:', audioSource.substring(0, 50) + '...');
       this.player.replace(audioSource as AudioSource);
-
-      // Small buffer to allow native player to process the replace
-      await new Promise(resolve => setTimeout(resolve, 100));
-
+      await new Promise(resolve => setTimeout(resolve, 50));
       console.log('[AudioService] ▶️ play() - Starting playback');
       this.player.play();
 
-      // Verify playback started with INCREASED ROBUSTNESS
+      // Verify playback started with retries
       console.log('[AudioService] 🔄 play() - Starting playback verification');
       let playbackStarted = false;
-
-      // Attempt for up to 3 seconds (30 * 100ms)
-      // This allows time for buffering without crashing the queue logic
-      for (let attempt = 0; attempt < 30; attempt++) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        console.log(`[AudioService] 🔄 play() - Verification attempt ${attempt + 1}/3, waiting 200ms...`);
+        await new Promise(resolve => setTimeout(resolve, 200));
+        console.log(`[AudioService] 🔄 play() - After wait, player.playing: ${this.player.playing}`);
         if (this.player.playing) {
           playbackStarted = true;
           console.log(`[AudioService] ✅ play() - Playback confirmed started on attempt ${attempt + 1}`);
           break;
         }
-
-        // Wait 100ms between checks
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Log progress every 10 attempts (1 second)
-        if ((attempt + 1) % 10 === 0) {
-           console.log(`[AudioService] ⏳ play() - Still waiting for playback... (attempt ${attempt + 1}/30)`);
-        }
-      }
-
-      // Final attempt to kickstart if still not playing after 3 seconds
-      if (!playbackStarted) {
-        console.log('[AudioService] ⚠️ play() - Playback not started after wait, trying play() command one last time');
+        console.log(`[AudioService] ⚠️ play() - Playback not started, retrying (attempt ${attempt + 1}/3)`);
         this.player.play();
-        // Give it one last 500ms grace period
-        await new Promise(resolve => setTimeout(resolve, 500));
-        if (this.player.playing) {
-            playbackStarted = true;
-            console.log('[AudioService] ✅ play() - Playback started after retry');
-        }
       }
 
       if (!playbackStarted) {
-        console.error('[AudioService] ❌ play() - Failed to start playback after extended wait');
-        throw new Error('Failed to start playback - timed out');
+        console.error('[AudioService] ❌ play() - Failed to start playback after 3 attempts');
+        throw new Error('Failed to start playback');
       }
 
       console.log('[AudioService] ✅ play() - Playback successful, updating media controls');
