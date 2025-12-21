@@ -3,7 +3,6 @@ import { EventSubscription } from 'expo-modules-core';
 import { downloadService } from './downloadService';
 import MediaControl, { Command, PlaybackState as MediaPlaybackState } from 'expo-media-control';
 import { getReciterPhotoUrl } from '../constants/config';
-import * as Linking from 'expo-linking';
 import BackgroundTimer from 'react-native-background-timer';
 
 export interface Track {
@@ -33,6 +32,7 @@ class AudioService {
   private playbackStatusSubscription: EventSubscription | null = null; // Native event subscription for playback status
   private sleepTimerTimeout: number | null = null; // Sleep timer (BackgroundTimer timeout ID)
   private fadeOutTimeout: number | null = null; // Fade out timer (BackgroundTimer timeout ID)
+  private sleepTimerEndTime: number | null = null; // When sleep timer will end (timestamp)
   private playedTrackIds: Set<string> = new Set(); // Track IDs of played tracks (reciterId:surahNumber)
   private shuffleHistory: Track[] = []; // Recently played tracks in shuffle mode (max 5)
   private playedTracksOrder: Track[] = []; // Tracks played in order (for previous navigation)
@@ -492,43 +492,6 @@ class AudioService {
     }
   }
 
-  /**
-   * Update media control position (call periodically during playback)
-   */
-  async updateMediaControlPosition() {
-    if (!this.player || !this.currentTrack) return;
-
-    // Throttle metadata updates to reduce console spam
-    const now = Date.now();
-    if (now - this.lastMetadataUpdateTime < AudioService.METADATA_UPDATE_THROTTLE_MS) {
-      return;
-    }
-
-    // Update throttle timestamp BEFORE making the call to prevent race conditions
-    this.lastMetadataUpdateTime = now;
-
-    try {
-      const position = this.player.currentTime;
-      const duration = this.player.duration || 0;
-      const artworkUri = getReciterPhotoUrl(this.currentTrack.reciterId);
-
-      await MediaControl.updateMetadata({
-        title: this.currentTrack.surahName,
-        artist: this.currentTrack.reciterName,
-        artwork: artworkUri ? {
-          uri: artworkUri,
-        } : undefined,
-        duration,
-        elapsedTime: position,
-      });
-
-      if (this.player.playing) {
-        await MediaControl.updatePlaybackState(MediaPlaybackState.PLAYING, position);
-      }
-    } catch (error) {
-      console.error('Error updating media control position:', error);
-    }
-  }
 
   /**
    * Update media control position from native playback status
@@ -777,6 +740,7 @@ class AudioService {
     const timeUntilFade = totalMs - fadeMs;
 
     console.log('[AudioService] Sleep timer set for', minutes, 'minutes');
+    this.sleepTimerEndTime = Date.now() + totalMs;
 
     // Schedule fade-out to start 10 seconds before the timer ends
     this.fadeOutTimeout = BackgroundTimer.setTimeout(() => {
@@ -789,6 +753,7 @@ class AudioService {
       console.log('[AudioService] Sleep timer complete - pausing playback');
       this.pause();
       this.resetVolume();
+      this.clearSleepTimer(); // Clear timer references after completion
       if (onComplete) {
         onComplete();
       }
@@ -809,7 +774,22 @@ class AudioService {
     }
     // Reset volume in case fade was in progress
     this.resetVolume();
+    this.sleepTimerEndTime = null;
     console.log('[AudioService] Sleep timer cleared');
+  }
+
+  /**
+   * Check if sleep timer is active
+   */
+  isSleepTimerActive(): boolean {
+    return this.sleepTimerTimeout !== null;
+  }
+
+  /**
+   * Get sleep timer end time (timestamp)
+   */
+  getSleepTimerEndTime(): number | null {
+    return this.sleepTimerEndTime;
   }
 
   /**

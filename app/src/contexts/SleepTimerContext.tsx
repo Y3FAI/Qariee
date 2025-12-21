@@ -53,6 +53,28 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
     };
   }, [isActive]);
 
+  // Sync timer state from audioService on mount (e.g., after app restart)
+  useEffect(() => {
+    const syncTimerState = async () => {
+      if (audioService.isSleepTimerActive()) {
+        const endTime = audioService.getSleepTimerEndTime();
+        if (endTime) {
+          const now = Date.now();
+          if (now >= endTime) {
+            // Timer already expired - clear it
+            audioService.clearSleepTimer();
+          } else {
+            // Timer still active - sync UI state
+            const remainingMs = endTime - now;
+            endTimeRef.current = endTime;
+            setRemainingSeconds(Math.floor(remainingMs / 1000));
+            setIsActive(true);
+          }
+        }
+      }
+    };
+    syncTimerState();
+  }, []);
 
   // UI countdown - updates every second for display only (timer logic is in audioService)
   useEffect(() => {

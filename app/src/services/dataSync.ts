@@ -95,10 +95,10 @@ const checkForUpdates = async (): Promise<boolean> => {
       console.log('Optional update available!');
     }
 
-    return { needsUpdate, isMandatory };
+    return needsUpdate;
   } catch (error) {
     // Network unavailable - skip update check
-    return { needsUpdate: false, isMandatory: false };
+    return false;
   }
 };
 
