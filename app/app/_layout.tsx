@@ -1,0 +1,166 @@
+import { useEffect, useState, useRef } from "react"
+import { Drawer } from "expo-router/drawer"
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native"
+import { SafeAreaProvider } from "react-native-safe-area-context"
+import { AudioProvider } from "../src/contexts/AudioContext"
+import { DownloadProvider } from "../src/contexts/DownloadContext"
+import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext"
+import { SleepTimerProvider } from "../src/contexts/SleepTimerContext"
+import CustomDrawer from "../src/components/CustomDrawer"
+import "../src/services/i18n" // Initialize i18n
+import {
+    initializeApp,
+    triggerBackgroundUpdate,
+} from "../src/services/dataSync"
+import {
+    useFonts,
+    Tajawal_400Regular,
+    Tajawal_500Medium,
+    Tajawal_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+} from "../src/utils/fonts"
+
+function AppContent({ needsUpdate }: { needsUpdate: boolean }) {
+    const { isOffline } = useNetwork()
+    const wasOfflineRef = useRef(isOffline)
+
+    // Detect when network comes online and trigger update
+    useEffect(() => {
+        if (wasOfflineRef.current && !isOffline) {
+            // Network just became available
+            triggerBackgroundUpdate()
+        }
+        wasOfflineRef.current = isOffline
+    }, [isOffline])
+
+    return (
+        <View style={{ flex: 1, backgroundColor: "#121212" }}>
+            <AudioProvider needsUpdateProp={needsUpdate}>
+                <SleepTimerProvider>
+                    <DownloadProvider>
+                        <Drawer
+                            drawerContent={(props) => <CustomDrawer {...props} />}
+                            screenOptions={{
+                                headerShown: false,
+                                drawerPosition: "left",
+                                drawerStyle: {
+                                    backgroundColor: "#121212",
+                                    width: 280,
+                                },
+                                drawerType: "front",
+                                swipeEnabled: true,
+                                overlayColor: "rgba(0, 0, 0, 0.5)",
+                            }}
+                        >
+                            <Drawer.Screen
+                                name="index"
+                                options={{
+                                    drawerItemStyle: { display: "none" },
+                                }}
+                            />
+                            <Drawer.Screen
+                                name="player"
+                                options={{
+                                    drawerItemStyle: { display: "none" },
+                                    swipeEnabled: false,
+                                }}
+                            />
+                            <Drawer.Screen
+                                name="reciter/[id]"
+                                options={{
+                                    drawerItemStyle: { display: "none" },
+                                    swipeEnabled: false,
+                                }}
+                            />
+                            <Drawer.Screen
+                                name="settings"
+                                options={{
+                                    drawerItemStyle: { display: "none" },
+                                }}
+                            />
+                            <Drawer.Screen
+                                name="about"
+                                options={{
+                                    drawerItemStyle: { display: "none" },
+                                }}
+                            />
+                        </Drawer>
+                    </DownloadProvider>
+                </SleepTimerProvider>
+            </AudioProvider>
+        </View>
+    )
+}
+
+export default function RootLayout() {
+    const [isReady, setIsReady] = useState(false)
+    const [needsUpdate, setNeedsUpdate] = useState(false)
+    const [fontsLoaded] = useFonts({
+        Tajawal_400Regular,
+        Tajawal_500Medium,
+        Tajawal_700Bold,
+        Inter_400Regular,
+        Inter_500Medium,
+        Inter_600SemiBold,
+        Inter_700Bold,
+        SurahNames: require("../assets/fonts/surah_names.ttf"),
+    })
+
+    useEffect(() => {
+        async function prepare() {
+            try {
+                const { isFirstLaunch, needsUpdate: appNeedsUpdate } =
+                    await initializeApp()
+
+                if (isFirstLaunch) {
+                    console.log("First launch: Data loaded")
+                } else {
+                    console.log("Using cached data, updating in background")
+                }
+
+                setNeedsUpdate(appNeedsUpdate)
+                setIsReady(true)
+            } catch (error) {
+                console.error("App initialization error:", error)
+                // Continue anyway with possibly partial data
+                setIsReady(true)
+            }
+        }
+
+        prepare()
+    }, [])
+
+    if (!isReady || !fontsLoaded) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#1DB954" />
+                <Text style={styles.loadingText}>Loading Qariee...</Text>
+            </View>
+        )
+    }
+
+    return (
+        <SafeAreaProvider>
+            <NetworkProvider>
+                <AppContent needsUpdate={needsUpdate} />
+            </NetworkProvider>
+        </SafeAreaProvider>
+    )
+}
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        backgroundColor: "#121212",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    loadingText: {
+        marginTop: 16,
+        color: "#efefd5",
+        fontSize: 16,
+    },
+})
