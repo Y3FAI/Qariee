@@ -3,7 +3,9 @@
 # dependencies
 node_modules/
 
-my-upload-key.keystore
+**.keystore
+*.keystore
+
 # Expo
 .expo/
 dist/
