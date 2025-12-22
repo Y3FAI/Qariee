@@ -1,13 +1,17 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Drawer } from "expo-router/drawer"
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
+import * as SplashScreen from "expo-splash-screen"
 import { AudioProvider } from "../src/contexts/AudioContext"
 import { DownloadProvider } from "../src/contexts/DownloadContext"
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext"
 import { SleepTimerProvider } from "../src/contexts/SleepTimerContext"
 import CustomDrawer from "../src/components/CustomDrawer"
 import "../src/services/i18n" // Initialize i18n
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync()
 import {
     initializeApp,
     triggerBackgroundUpdate,
@@ -128,21 +132,25 @@ export default function RootLayout() {
         prepare()
     }, [])
 
+    const onLayoutRootView = useCallback(async () => {
+        if (isReady && fontsLoaded) {
+            // Hide the splash screen after the root view has laid out
+            await SplashScreen.hideAsync()
+        }
+    }, [isReady, fontsLoaded])
+
     if (!isReady || !fontsLoaded) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#1DB954" />
-                <Text style={styles.loadingText}>Loading Rabi...</Text>
-            </View>
-        )
+        return null // Keep showing native splash screen
     }
 
     return (
-        <SafeAreaProvider>
-            <NetworkProvider>
-                <AppContent needsUpdate={needsUpdate} />
-            </NetworkProvider>
-        </SafeAreaProvider>
+        <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+            <SafeAreaProvider>
+                <NetworkProvider>
+                    <AppContent needsUpdate={needsUpdate} />
+                </NetworkProvider>
+            </SafeAreaProvider>
+        </View>
     )
 }
 

@@ -17,7 +17,7 @@
         },
         "android": {
             "adaptiveIcon": {
-                "backgroundColor": "#E6F4FE",
+                "backgroundColor": "#f0fff0",
                 "foregroundImage": "../assets/icon.png"
             },
             "edgeToEdgeEnabled": true,
@@ -34,7 +34,7 @@
         },
 
         "notification": {
-            "icon": "../assets/notification-icon.png",
+            "icon": "../assets/notification_icon.png",
             "color": "#000000"
         },
         "plugins": [
@@ -42,10 +42,10 @@
             [
                 "expo-splash-screen",
                 {
-                    "image": "../assets/icon.png",
+                    "image": "../assets/splash.png",
                     "imageWidth": 200,
                     "resizeMode": "contain",
-                    "backgroundColor": "#ffffff",
+                    "backgroundColor": "#f0fff0",
                     "dark": {
                         "backgroundColor": "#000000"
                     }
@@ -57,7 +57,7 @@
             [
                 "expo-media-control",
                 {
-                    "notificationIcon": "../assets/notification-icon.png",
+                    "notificationIcon": "../assets/notification_icon.png",
                     "enableBackgroundAudio": true,
                     "audioSessionCategory": "playback",
                     "skipInterval": 15,

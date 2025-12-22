@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 
+my-upload-key.keystore
 # Expo
 .expo/
 dist/
@@ -40,5 +41,3 @@ app-example
 
 # generated native folders
 app/ios
-app/android
-

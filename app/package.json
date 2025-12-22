@@ -4,7 +4,7 @@
     "version": "1.0.0",
     "scripts": {
         "start": "expo start",
-        "prebuild": "npx expo prebuild",
+        "prebuild": "npx expo prebuild --clean",
         "dev-install": "adb uninstall com.yousef54ai.rabi; cd android && ./gradlew installDebug && cd ..",
         "standalone-install": "cd android && ./gradlew assembleRelease && cd .. && adb uninstall com.yousef54ai.rabi && adb install -r android/app/build/outputs/apk/release/app-release.apk",
         "android": "expo run:android",
