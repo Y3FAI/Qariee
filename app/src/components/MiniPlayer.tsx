@@ -220,6 +220,9 @@ const styles = StyleSheet.create({
     playIconFlip: {
         transform: [{ scaleX: -1 }],
     },
+    playIconOffset: {
+        marginLeft: 2,
+    },
     playButton: {
         marginLeft: 12,
     },

@@ -90,7 +90,7 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
           // Need to convert simplified history back to Track objects
           // We'll create minimal track objects with just reciterId and surahNumber
           // The full track info will be loaded later
-          const historyTracks: Track[] = savedSession.shuffleHistory.map(item => ({
+          const historyTracks: Track[] = savedSession.shuffleHistory.map((item: { reciterId: string; surahNumber: number }) => ({
             reciterId: item.reciterId,
             surahNumber: item.surahNumber,
             reciterName: savedSession.reciterName,
@@ -104,7 +104,7 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
         }
         if (savedSession.playedTracksOrder) {
           // Convert simplified played tracks order back to Track objects
-          const orderTracks: Track[] = savedSession.playedTracksOrder.map(item => ({
+          const orderTracks: Track[] = savedSession.playedTracksOrder.map((item: { reciterId: string; surahNumber: number }) => ({
             reciterId: item.reciterId,
             surahNumber: item.surahNumber,
             reciterName: savedSession.reciterName,
@@ -286,13 +286,16 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
             })),
           });
         }
+      } else if (nextAppState === 'active') {
+        // App came to foreground - sync state from audio service
+        syncStateFromService();
       }
     });
 
     return () => {
       subscription.remove();
     };
-  }, [currentTrack, position, duration]);
+  }, [currentTrack, position, duration, syncStateFromService]);
 
   // Note: Track finished detection is handled by audioService.ts via native playback status events
   // to ensure it works even when app is backgrounded. We don't duplicate it here.

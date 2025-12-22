@@ -63,16 +63,13 @@ class AudioService {
    * Handle playback status updates from native events
    */
   private handlePlaybackStatusUpdate(status: AudioStatus) {
-    console.log('[AudioService] 🔊 handlePlaybackStatusUpdate - playing:', status.playing, 'didJustFinish:', status.didJustFinish, 'currentTime:', status.currentTime.toFixed(1), 'duration:', status.duration?.toFixed(1));
     if (!this.currentTrack) {
-      console.log('[AudioService] ⚠️ handlePlaybackStatusUpdate - No currentTrack, skipping');
       return;
     }
 
     // Safety check: if isProcessingNext is stuck for too long (30 seconds), reset it
     if (this.isProcessingNext && this.isProcessingNextSince > 0) {
       const stuckForMs = Date.now() - this.isProcessingNextSince;
-      console.log('[AudioService] ⏱️ handlePlaybackStatusUpdate - isProcessingNext has been true for', stuckForMs, 'ms');
       if (stuckForMs > 30000) { // 30 seconds timeout
         console.warn('[AudioService] 🚨 handlePlaybackStatusUpdate - isProcessingNext stuck for', stuckForMs, 'ms, RESETTING');
         this.isProcessingNext = false;
@@ -84,14 +81,8 @@ class AudioService {
     this.updateMediaControlPositionFromStatus(status);
 
     // Check if track just finished using native didJustFinish flag
-    console.log('[AudioService] 🔄 handlePlaybackStatusUpdate - Checking finish: didJustFinish=', status.didJustFinish, 'isProcessingNext=', this.isProcessingNext, 'since=', this.isProcessingNextSince);
     if (status.didJustFinish && !this.isProcessingNext) {
-      console.log('[AudioService] ✅ handlePlaybackStatusUpdate - Track finished (native event), auto-advancing to next');
       this.playNext();
-    } else if (status.didJustFinish) {
-      console.log('[AudioService] ⏸️ handlePlaybackStatusUpdate - Track finished but isProcessingNext=true, skipping');
-      // Log stack trace to help debug why it's stuck
-      console.log('[AudioService] 🔍 handlePlaybackStatusUpdate - Stack trace:', new Error().stack?.split('\n').slice(1, 5).join(' ← '));
     }
   }
 
@@ -222,8 +213,6 @@ class AudioService {
 
       // Set up event listener for media control commands
       MediaControl.addListener((event) => {
-        console.log('[MediaControl] Event received:', event.command);
-
         switch (event.command) {
           case Command.PLAY:
             this.resume();
@@ -847,41 +836,44 @@ class AudioService {
         return;
       }
 
-      // Check if queue is empty
-      console.log('[AudioService] 🔄 playNext() - Checking queue, length:', this.queue.length);
-      if (this.queue.length === 0) {
-        console.log('[AudioService] ⏸️ playNext() - Queue empty, pausing playback');
-        // Queue is empty - playback ends naturally
-        // Pause player (which also updates media controls)
-        await this.pause();
-        return;
-      }
+      // Iterative Queue Processing (Prevent Stack Overflow)
+      let nextTrack: Track | undefined;
+      let playableFound = false;
+      let attempts = 0;
+      const MAX_ATTEMPTS = this.queue.length + 1; // Safety breaker
 
-      const nextTrack = this.queue.shift();
-      console.log('[AudioService] 🔄 playNext() - Extracted nextTrack:', nextTrack?.surahName, 'queue remaining:', this.queue.length);
-      if (nextTrack) {
-        console.log('[AudioService] 🔄 playNext() - Calling play() for next track:', nextTrack.surahName);
-        try {
-          await this.play(nextTrack, this.queue, false);
-        } catch (error) {
-          console.error('[AudioService] ❌ playNext() - Error playing next track:', error);
-          // If offline error, stop playback and clear state
+      // Loop until we find a playable track or exhaust the queue
+      while (this.queue.length > 0 && !playableFound && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        nextTrack = this.queue.shift();
 
-          // Put track back in queue if play failed
-          if (nextTrack) {
-            console.log('[AudioService] 🔄 playNext() - Putting failed track back in queue:', nextTrack.surahName);
-            this.queue.unshift(nextTrack);
+        if (!nextTrack) break;
+
+        // PRE-CHECK: If offline, verify file exists BEFORE trying to play
+        if (this.isOffline) {
+          const hasFile = await downloadService.isDownloaded(nextTrack.reciterId, nextTrack.surahNumber);
+          if (!hasFile) {
+            console.log(`[AudioService] ⏭️ Skipping undownloaded track in offline mode: ${nextTrack.surahName}`);
+            continue; // Skip this iteration, try next track
           }
-
-          // Stop playback on error
-          console.log('[AudioService] ⏸️ playNext() - Pausing due to error');
-          await this.pause();
-
-          throw error; // Re-throw to let caller handle
         }
-      } else {
-        console.log('[AudioService] ⚠️ playNext() - No nextTrack extracted, queue might be empty');
+
+        try {
+          // Attempt to play
+          await this.play(nextTrack, this.queue, false);
+          playableFound = true; // Success!
+        } catch (error) {
+          console.error(`[AudioService] ❌ Failed to play ${nextTrack.surahName}, skipping...`, error);
+          // Loop continues to next track automatically
+        }
       }
+
+      // If queue empty or no playable tracks found
+      if (!playableFound) {
+        console.log('[AudioService] ⏹️ No playable tracks remaining. Stopping.');
+        await this.pause();
+      }
+
     } finally {
       console.log('[AudioService] 📝 playNext() - Setting isProcessingNext = false, was set at', this.isProcessingNextSince);
       this.isProcessingNext = false;

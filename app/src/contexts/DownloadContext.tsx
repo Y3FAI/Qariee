@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { downloadService, DownloadProgress } from '../services/downloadService';
+import { useAudio } from './AudioContext';
 import { getAllDownloads } from '../services/database';
 import { Download } from '../types';
 
@@ -22,6 +23,7 @@ export function DownloadProvider({ children }: { children: ReactNode }) {
   const [activeDownloads, setActiveDownloads] = useState<Map<string, DownloadProgress>>(new Map());
   const [deletingDownloads, setDeletingDownloads] = useState<Set<string>>(new Set());
   const [storageUsed, setStorageUsed] = useState(0);
+  const { currentTrack, isPlaying, playNext } = useAudio();
 
   // Initialize download service
   useEffect(() => {
@@ -102,6 +104,24 @@ export function DownloadProvider({ children }: { children: ReactNode }) {
   // Delete a download
   const deleteDownload = async (reciterId: string, surahNumber: number) => {
     const key = getDownloadKey(reciterId, surahNumber);
+
+    // [ROBUSTNESS CHECK] Is this track currently playing?
+    if (currentTrack &&
+        currentTrack.reciterId === reciterId &&
+        currentTrack.surahNumber === surahNumber) {
+
+      console.log('[DownloadContext] ⚠️ User deleting currently playing track!');
+
+      // Option 2 (Better UX): Skip to next track before deleting
+      if (isPlaying) {
+          try {
+            await playNext();
+          } catch (error) {
+            console.error('[DownloadContext] Error skipping to next track:', error);
+            // Continue with deletion even if skip fails
+          }
+      }
+    }
 
     try {
       // Mark as deleting

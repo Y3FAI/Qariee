@@ -16,6 +16,9 @@ export interface ListeningSession {
   position: number; // Current position in seconds
   duration: number;
   timestamp: number; // When this was saved
+  playedTrackIds?: string[];
+  shuffleHistory?: Array<{ reciterId: string; surahNumber: number }>;
+  playedTracksOrder?: Array<{ reciterId: string; surahNumber: number }>;
 }
 
 /**
