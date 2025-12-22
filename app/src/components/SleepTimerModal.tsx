@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
         aspectRatio: 1.25, // Slightly rectangular
         backgroundColor: "#2C2C2E",
         borderRadius: 16,
-
+        paddingBottom: 6,
         // Critical for centering:
         justifyContent: "center",
         alignItems: "center",
