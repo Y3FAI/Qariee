@@ -27,8 +27,6 @@ interface AudioContextType {
     setCurrentTrack: (track: CurrentTrack | null) => void
     isPlaying: boolean
     setIsPlaying: (playing: boolean) => void
-    needsUpdate: boolean
-    setNeedsUpdate: (needsUpdate: boolean) => void
     position: number
     duration: number
     playbackMode: PlaybackMode
@@ -46,16 +44,13 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined)
 
 export function AudioProvider({
     children,
-    needsUpdateProp = false,
 }: {
     children: ReactNode
-    needsUpdateProp?: boolean
 }) {
     const player = useAudioPlayer()
     const { isOffline } = useNetwork()
     const [currentTrack, setCurrentTrack] = useState<CurrentTrack | null>(null)
     const [isPlaying, setIsPlaying] = useState(false)
-    const [needsUpdate, setNeedsUpdate] = useState(needsUpdateProp)
     const [position, setPosition] = useState(0)
     const [duration, setDuration] = useState(0)
     const [playbackMode, setPlaybackModeState] =
@@ -495,8 +490,6 @@ export function AudioProvider({
                 setCurrentTrack,
                 isPlaying,
                 setIsPlaying,
-                needsUpdate,
-                setNeedsUpdate,
                 position,
                 duration,
                 playbackMode,

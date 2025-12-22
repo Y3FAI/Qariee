@@ -58,38 +58,10 @@ export const initializeApp = async (): Promise<{
 
 /**
  * Check if app needs update by comparing versions
+ * DISABLED: Always returns false to remove annoying update messages
  */
 const checkForUpdates = async (): Promise<boolean> => {
-  try {
-    // Add cache-busting parameter to force fresh fetch
-    const url = `${getAppDatabaseUrl()}?t=${Date.now()}`;
-    const response = await fetch(url, {
-      cache: 'no-cache',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-      },
-    });
-
-    if (!response.ok) {
-      return false;
-    }
-
-    const data: AppDatabase = await response.json();
-
-    // Compare current app version with server version
-    const serverVersion = data.settings.app_version;
-    const minVersion = data.settings.min_app_version;
-
-    // Simple version comparison (assumes semver format: major.minor.patch)
-    const needsUpdate = compareVersions(APP_VERSION, serverVersion) < 0;
-    const isMandatory = compareVersions(APP_VERSION, minVersion) < 0;
-
-    return needsUpdate;
-  } catch (error) {
-    // Network unavailable - skip update check
-    return false;
-  }
+  return false;
 };
 
 /**

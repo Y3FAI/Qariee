@@ -1,0 +1,19 @@
+{
+    "version": "1.0.0",
+    "settings": {
+        "cdn_base_url": "https://rabi.y3f.me",
+        "app_name": "Rabi",
+        "support_email": "yousef.contact.apps@gmail.com",
+        "app_version": "1.0.0",
+        "min_app_version": "1.0.0"
+    },
+    "reciters": [
+        {
+            "id": "hussary",
+            "name_en": "Mahmoud Khalil Al-Hussary",
+            "name_ar": "محمود خليل الحصري",
+            "color_primary": "#4A90E2",
+            "color_secondary": "#8CB4FF"
+        }
+    ]
+}

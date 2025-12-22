@@ -19,9 +19,7 @@ import { getAllReciters } from '../src/services/database';
 import { getReciterPhotoUrl } from '../src/constants/config';
 import { Reciter } from '../src/types';
 import MiniPlayer from '../src/components/MiniPlayer';
-import UpdateBanner from '../src/components/UpdateBanner';
 import OfflineIndicator from '../src/components/OfflineIndicator';
-import { useAudio } from '../src/contexts/AudioContext';
 import { isArabic } from '../src/services/i18n';
 import { getFontFamily } from '../src/utils/fonts';
 
@@ -32,7 +30,6 @@ export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const navigation = useNavigation();
-  const { needsUpdate, setNeedsUpdate } = useAudio();
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [loading, setLoading] = useState(true);
   const arabic = isArabic();
@@ -134,7 +131,6 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {needsUpdate && <UpdateBanner onDismiss={() => setNeedsUpdate(false)} />}
       <OfflineIndicator />
       <View style={[styles.header, { direction: 'ltr' }]}>
         <TouchableOpacity

@@ -27,7 +27,7 @@ import {
     Inter_700Bold,
 } from "../src/utils/fonts"
 
-function AppContent({ needsUpdate }: { needsUpdate: boolean }) {
+function AppContent() {
     const { isOffline } = useNetwork()
     const wasOfflineRef = useRef(isOffline)
 
@@ -42,7 +42,7 @@ function AppContent({ needsUpdate }: { needsUpdate: boolean }) {
 
     return (
         <View style={{ flex: 1, backgroundColor: "#121212" }}>
-            <AudioProvider needsUpdateProp={needsUpdate}>
+            <AudioProvider>
                 <SleepTimerProvider>
                     <DownloadProvider>
                         <Drawer
@@ -101,7 +101,6 @@ function AppContent({ needsUpdate }: { needsUpdate: boolean }) {
 
 export default function RootLayout() {
     const [isReady, setIsReady] = useState(false)
-    const [needsUpdate, setNeedsUpdate] = useState(false)
     const [fontsLoaded] = useFonts({
         Tajawal_400Regular,
         Tajawal_500Medium,
@@ -116,11 +115,9 @@ export default function RootLayout() {
     useEffect(() => {
         async function prepare() {
             try {
-                const { needsUpdate: appNeedsUpdate } = await initializeApp()
+                await initializeApp()
 
                 // Data loaded successfully
-
-                setNeedsUpdate(appNeedsUpdate)
                 setIsReady(true)
             } catch (error) {
                 console.error("App initialization error:", error)
@@ -147,7 +144,7 @@ export default function RootLayout() {
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
             <SafeAreaProvider>
                 <NetworkProvider>
-                    <AppContent needsUpdate={needsUpdate} />
+                    <AppContent />
                 </NetworkProvider>
             </SafeAreaProvider>
         </View>
