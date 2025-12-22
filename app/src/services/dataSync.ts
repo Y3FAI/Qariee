@@ -190,8 +190,8 @@ const loadBundledReciters = async (): Promise<void> => {
     // Set default settings
     const currentCdnUrl = getCdnBaseUrl();
     await setMetadata('cdn_base_url', currentCdnUrl);
-    await setMetadata('app_name', 'Qariee');
-    await setMetadata('support_email', 'support@qariee.app');
+    await setMetadata('app_name', 'Rabi');
+    await setMetadata('support_email', 'support@rabi.app');
     await setMetadata('app_version', APP_VERSION);
     await setMetadata('min_app_version', APP_VERSION);
     await setMetadata('db_version', '1.0.0');

@@ -245,22 +245,22 @@ See `unit-testing-strategy.md` for detailed mapping of unit tests to business lo
 - [ ] Use play/pause, next, previous buttons - should work (Partially Unit Tested - media control integration)
 
 ### 6.2 Notification Controls
-- [ ] Start playing a surah
-- [ ] Swipe down notification shade
-- [ ] Verify notification shows with artwork and controls
-- [ ] Use notification controls
+- [ ] Start playing a surah (Partially Unit Tested - play() method)
+- [ ] Swipe down notification shade (Manual Testing Required - OS interaction)
+- [ ] Verify notification shows with artwork and controls (Manual Testing Required - notification rendering)
+- [ ] Use notification controls (Partially Unit Tested - media control integration)
 
 ### 6.3 Notification Accuracy
-- [ ] Change track using in-app controls
-- [ ] Verify notification updates within 1 second
-- [ ] Seek within track
-- [ ] Verify notification progress updates
+- [ ] Change track using in-app controls (Partially Unit Tested - play()/playNext() methods)
+- [ ] Verify notification updates within 1 second (Manual Testing Required - notification update timing)
+- [ ] Seek within track (Partially Unit Tested - seekTo() method)
+- [ ] Verify notification progress updates (Manual Testing Required - notification update)
 
 ### 6.4 Notification Persistence
-- [ ] Start playing, then force quit app
-- [ ] Notification should disappear (or show stopped state)
-- [ ] Restart app, resume playback
-- [ ] Notification should reappear
+- [ ] Start playing, then force quit app (Partially Unit Tested - play() method, manual app quit)
+- [ ] Notification should disappear (or show stopped state) (Manual Testing Required - notification behavior)
+- [ ] Restart app, resume playback (Manual Testing Required - app lifecycle)
+- [ ] Notification should reappear (Manual Testing Required - notification behavior)
 
 ---
 
@@ -269,22 +269,22 @@ See `unit-testing-strategy.md` for detailed mapping of unit tests to business lo
 **Objective:** Verify app handles network changes gracefully.
 
 ### 7.1 Online → Offline Transition
-- [ ] Start streaming a surah
-- [ ] Turn on airplane mode mid-playback
-- [ ] App should handle gracefully (pause, show error, or continue if buffered)
-- [ ] Try to play non-downloaded surah - should show appropriate message
+- [ ] Start streaming a surah (Partially Unit Tested - play() method with streaming)
+- [ ] Turn on airplane mode mid-playback (Manual Testing Required - network state change)
+- [ ] App should handle gracefully (pause, show error, or continue if buffered) (Unit Tested - setOfflineStatus() logic)
+- [ ] Try to play non-downloaded surah - should show appropriate message (Unit Tested - offline validation logic)
 
 ### 7.2 Offline → Online Transition
-- [ ] Go offline, try to play non-downloaded surah (should fail)
-- [ ] Turn off airplane mode
-- [ ] Try to play same surah - should now work
-- [ ] Verify download buttons re-enable when online
+- [ ] Go offline, try to play non-downloaded surah (should fail) (Unit Tested - offline validation logic)
+- [ ] Turn off airplane mode (Manual Testing Required - network state change)
+- [ ] Try to play same surah - should now work (Unit Tested - play() method with streaming)
+- [ ] Verify download buttons re-enable when online (Manual Testing Required - UI update)
 
 ### 7.3 Network Switching
-- [ ] Start streaming on WiFi
-- [ ] Disable WiFi (switch to cellular)
-- [ ] Playback should continue if buffered, or reconnect
-- [ ] Test opposite (cellular → WiFi)
+- [ ] Start streaming on WiFi (Partially Unit Tested - play() method with streaming)
+- [ ] Disable WiFi (switch to cellular) (Manual Testing Required - network state change)
+- [ ] Playback should continue if buffered, or reconnect (Manual Testing Required - network resilience)
+- [ ] Test opposite (cellular → WiFi) (Manual Testing Required - network state change)
 
 ---
 
@@ -293,61 +293,61 @@ See `unit-testing-strategy.md` for detailed mapping of unit tests to business lo
 **Objective:** Verify app restores state correctly after being killed.
 
 ### 8.1 Basic State Restoration
-- [ ] Play a surah, pause at 30 seconds
-- [ ] Force quit the app
-- [ ] Reopen the app
-- [ ] Should restore to same surah at ~30 seconds position
-- [ ] Playback should be paused
+- [ ] Play a surah, pause at 30 seconds (Partially Unit Tested - play()/pause() methods)
+- [ ] Force quit the app (Manual Testing Required - app lifecycle)
+- [ ] Reopen the app (Manual Testing Required - app lifecycle)
+- [ ] Should restore to same surah at ~30 seconds position (Unit Tested - saveListeningSession()/loadListeningSession())
+- [ ] Playback should be paused (Unit Tested - playback state persistence)
 
 ### 8.2 Queue Restoration
-- [ ] Play a surah with queue (multiple surahs remaining)
-- [ ] Force quit the app
-- [ ] Reopen the app
-- [ ] Verify queue is restored (next surahs should be correct)
+- [ ] Play a surah with queue (multiple surahs remaining) (Partially Unit Tested - play() method with queue)
+- [ ] Force quit the app (Manual Testing Required - app lifecycle)
+- [ ] Reopen the app (Manual Testing Required - app lifecycle)
+- [ ] Verify queue is restored (next surahs should be correct) (Unit Tested - queue persistence in ListeningSession)
 
 ### 8.3 Playback Mode Restoration
-- [ ] Set shuffle mode, play a few surahs
-- [ ] Force quit the app
-- [ ] Reopen the app
-- [ ] Should still be in shuffle mode with correct shuffle history
+- [ ] Set shuffle mode, play a few surahs (Unit Tested - setPlaybackMode() method)
+- [ ] Force quit the app (Manual Testing Required - app lifecycle)
+- [ ] Reopen the app (Manual Testing Required - app lifecycle)
+- [ ] Should still be in shuffle mode with correct shuffle history (Unit Tested - playback mode persistence + shuffle history persistence)
 
 ### 8.4 Sleep Timer Restoration
-- [ ] Set sleep timer for 5 minutes
-- [ ] Force quit the app
-- [ ] Reopen after 1 minute
-- [ ] UI should show ~4 minutes remaining
-- [ ] Timer should still expire correctly
+- [ ] Set sleep timer for 5 minutes (Partially Unit Tested - setSleepTimer() logic)
+- [ ] Force quit the app (Manual Testing Required - app lifecycle)
+- [ ] Reopen after 1 minute (Manual Testing Required - app lifecycle)
+- [ ] UI should show ~4 minutes remaining (Unit Tested - sleep timer persistence)
+- [ ] Timer should still expire correctly (Partially Unit Tested - timer persistence logic, expiration manual)
 
 ### 8.5 Low Memory Handling
-- [ ] Play audio, open other memory-intensive apps
-- [ ] Let system kill Rabi app in background
-- [ ] Return to Rabi app
-- [ ] Should restore state correctly
+- [ ] Play audio, open other memory-intensive apps (Manual Testing Required - system interaction)
+- [ ] Let system kill Rabi app in background (Manual Testing Required - system behavior)
+- [ ] Return to Rabi app (Manual Testing Required - app lifecycle)
+- [ ] Should restore state correctly (Unit Tested - state persistence, manual app lifecycle)
 
 ---
 
 ## 9. Edge Cases & Stress Tests
 
 ### 9.1 Rapid User Actions
-- [ ] Rapidly tap play/pause button 10 times
-- [ ] Rapidly switch playback modes
-- [ ] Rapidly seek forward/backward
-- [ ] App should not crash or become unresponsive
+- [ ] Rapidly tap play/pause button 10 times (Partially Unit Tested - togglePlayPause() race condition handling)
+- [ ] Rapidly switch playback modes (Partially Unit Tested - setPlaybackMode() method)
+- [ ] Rapidly seek forward/backward (Partially Unit Tested - seekTo() method)
+- [ ] App should not crash or become unresponsive (Manual Testing Required - UI responsiveness)
 
 ### 9.2 Multiple Reciters
-- [ ] Start playing from one reciter
-- [ ] Switch to different reciter mid-playback
-- [ ] Verify clean transition, no audio glitches
+- [ ] Start playing from one reciter (Partially Unit Tested - play() method)
+- [ ] Switch to different reciter mid-playback (Partially Unit Tested - play() method with different reciter)
+- [ ] Verify clean transition, no audio glitches (Manual Testing Required - audio continuity)
 
 ### 9.3 Very Long Sessions
-- [ ] Play entire reciter's collection (114 surahs)
-- [ ] Let it run for 1+ hours
-- [ ] Verify no memory leaks, crashes, or playback issues
+- [ ] Play entire reciter's collection (114 surahs) (Partially Unit Tested - playNext() loop handling)
+- [ ] Let it run for 1+ hours (Manual Testing Required - time passage)
+- [ ] Verify no memory leaks, crashes, or playback issues (Manual Testing Required - system stability)
 
 ### 9.4 Battery Saver Mode
-- [ ] Enable battery saver/ low power mode
-- [ ] Test playback and background operation
-- [ ] Some features may be limited (expected)
+- [ ] Enable battery saver/ low power mode (Manual Testing Required - system settings)
+- [ ] Test playback and background operation (Manual Testing Required - system behavior)
+- [ ] Some features may be limited (expected) (Manual Testing Required - feature verification)
 
 ---
 

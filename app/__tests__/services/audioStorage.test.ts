@@ -20,7 +20,7 @@ describe('AudioStorage', () => {
 
       expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-        '@qariee:playback_mode',
+        '@rabi:playback_mode',
         mode
       );
     });
@@ -31,7 +31,7 @@ describe('AudioStorage', () => {
       for (const mode of modes) {
         await audioStorage.savePlaybackMode(mode);
         expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-          '@qariee:playback_mode',
+          '@rabi:playback_mode',
           mode
         );
       }
@@ -59,7 +59,7 @@ describe('AudioStorage', () => {
       const result = await audioStorage.loadPlaybackMode();
 
       expect(AsyncStorage.getItem).toHaveBeenCalledTimes(1);
-      expect(AsyncStorage.getItem).toHaveBeenCalledWith('@qariee:playback_mode');
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith('@rabi:playback_mode');
       expect(result).toBe(mode);
     });
 
@@ -104,7 +104,7 @@ describe('AudioStorage', () => {
 
       expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
       const callArgs = (AsyncStorage.setItem as jest.Mock).mock.calls[0];
-      expect(callArgs[0]).toBe('@qariee:listening_session');
+      expect(callArgs[0]).toBe('@rabi:listening_session');
 
       const savedData = JSON.parse(callArgs[1]);
       expect(savedData.reciterId).toBe(baseSession.reciterId);
@@ -217,7 +217,7 @@ describe('AudioStorage', () => {
       const result = await audioStorage.loadListeningSession();
 
       expect(AsyncStorage.getItem).toHaveBeenCalledTimes(1);
-      expect(AsyncStorage.getItem).toHaveBeenCalledWith('@qariee:listening_session');
+      expect(AsyncStorage.getItem).toHaveBeenCalledWith('@rabi:listening_session');
       expect(result).toEqual(validSession);
     });
 
@@ -239,7 +239,7 @@ describe('AudioStorage', () => {
       const result = await audioStorage.loadListeningSession();
 
       expect(result).toBeNull();
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@qariee:listening_session');
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@rabi:listening_session');
     });
 
     it('should handle corrupted JSON gracefully', async () => {
@@ -317,7 +317,7 @@ describe('AudioStorage', () => {
       await audioStorage.clearListeningSession();
 
       expect(AsyncStorage.removeItem).toHaveBeenCalledTimes(1);
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@qariee:listening_session');
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@rabi:listening_session');
     });
 
     it('should handle AsyncStorage errors gracefully', async () => {

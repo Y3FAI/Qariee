@@ -1,4 +1,4 @@
-# Qariee MVP - TODO List
+# Rabi MVP - TODO List
 
 ## High Priority - Core Features
 

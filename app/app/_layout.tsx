@@ -132,7 +132,7 @@ export default function RootLayout() {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#1DB954" />
-                <Text style={styles.loadingText}>Loading Qariee...</Text>
+                <Text style={styles.loadingText}>Loading Rabi...</Text>
             </View>
         )
     }

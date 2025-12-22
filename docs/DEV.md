@@ -1,4 +1,4 @@
-# Qariee
+# Rabi
 
 ## Forks
 
@@ -29,7 +29,7 @@ This section documents major architectural and infrastructure decisions made dur
 
 ## Project Overview
 
-**Qariee** is a Spotify-style Quran streaming and offline listening app for Android, built with React Native. The app provides a modern, clean interface for discovering Quran reciters (Qaris) and listening to recitations with seamless streaming and offline download capabilities.
+**Rabi** is a Spotify-style Quran streaming and offline listening app for Android, built with React Native. The app provides a modern, clean interface for discovering Quran reciters (Qaris) and listening to recitations with seamless streaming and offline download capabilities.
 
 **Vision:** "Spotify for Quran"
 

@@ -19,7 +19,6 @@ const CONTAINER_BORDER_RADIUS = 12 // Rounded top corners
 
 // Control Button Sizes
 const PLAY_ICON_SIZE = 28
-const NEXT_ICON_SIZE = 24
 
 // Progress Bar
 const PROGRESS_HEIGHT = 2
@@ -38,7 +37,6 @@ const CONTAINER_PADDING_HORIZONTAL = 12
 const CONTAINER_PADDING_TOP = 8
 const CONTAINER_PADDING_BOTTOM = 8
 const ARTWORK_MARGIN_RIGHT = 12
-const NEXT_BUTTON_MARGIN_LEFT = 20
 
 // Safe Area
 const MIN_BOTTOM_SAFE_AREA = 8 // Minimum padding for Android nav bar
@@ -69,7 +67,6 @@ export default function MiniPlayer() {
         togglePlayPause,
         position,
         duration,
-        playNext,
     } = useAudio()
 
     if (!currentTrack) {

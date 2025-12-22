@@ -150,8 +150,6 @@ const GRADIENT_LOCATIONS: readonly [number, number, number, number] = [
 
 // Slider Configuration
 const SLIDER_HEIGHT = 60
-const SLIDER_TRACK_HEIGHT = 10
-const SLIDER_THUMB_SIZE = 16
 const SLIDER_PLAYED_COLOR = "#efefd5"
 const SLIDER_UNPLAYED_OPACITY = 0.3
 const SLIDER_TIME_PADDING = 16
@@ -216,7 +214,6 @@ export default function PlayerScreen() {
         setPlaybackMode,
         togglePlayPause,
         seekTo,
-        playNext,
         playTrack,
     } = useAudio()
     const {
@@ -331,10 +328,7 @@ export default function PlayerScreen() {
 
             // Check if offline and not downloaded
             if (isOffline && !isNextDownloaded) {
-                Alert.alert(
-                    t('offline'),
-                    t('download_required_offline'),
-                )
+                Alert.alert(t("offline"), t("download_required_offline"))
                 return
             }
 
@@ -399,10 +393,7 @@ export default function PlayerScreen() {
 
             // Check if offline and not downloaded
             if (isOffline && !isPrevDownloaded) {
-                Alert.alert(
-                    t('offline'),
-                    t('download_required_offline'),
-                )
+                Alert.alert(t("offline"), t("download_required_offline"))
                 return
             }
 
@@ -481,10 +472,7 @@ export default function PlayerScreen() {
         } else {
             // Check if offline before downloading
             if (isOffline) {
-                Alert.alert(
-                    t('offline'),
-                    t('download_requires_internet'),
-                )
+                Alert.alert(t("offline"), t("download_requires_internet"))
                 return
             }
 

@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PlaybackMode } from './audioService';
 
 const STORAGE_KEYS = {
-  PLAYBACK_MODE: '@qariee:playback_mode',
-  LISTENING_SESSION: '@qariee:listening_session',
+  PLAYBACK_MODE: '@rabi:playback_mode',
+  LISTENING_SESSION: '@rabi:listening_session',
 };
 
 export interface ListeningSession {
