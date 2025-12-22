@@ -3,7 +3,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { useAudioPlayer, setAudioModeAsync, AudioStatus } from 'expo-audio';
 import { audioService, Track, PlaybackMode } from '../services/audioService';
 import { useNetwork } from './NetworkContext';
-import { audioStorage } from '../services/audioStorage';
+import { audioStorage, ListeningSession } from '../services/audioStorage';
 
 interface CurrentTrack {
   reciterId: string;
@@ -62,7 +62,6 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
     loadSavedState();
 
     return () => {
-      console.log('[AudioContext] Cleaning up - but NOT releasing player');
       // Don't release the player here - it causes "released" errors
     };
   }, [player]);
@@ -79,7 +78,6 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
 
       // Load listening session
       const savedSession = await audioStorage.loadListeningSession();
-      console.log('[AudioContext] Loaded session from storage:', savedSession);
 
       if (savedSession) {
         // Restore played track IDs and shuffle history from saved session
@@ -130,11 +128,8 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
         setPosition(savedSession.position);
         setDuration(savedSession.duration);
 
-        console.log('[AudioContext] Pre-loading audio for instant playback...');
         // Pre-load the audio immediately so clicking play is instant
         preloadSavedSession(savedSession);
-      } else {
-        console.log('[AudioContext] No saved session found');
       }
     } catch (error) {
       console.error('Error loading saved state:', error);
@@ -142,7 +137,7 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
   };
 
   // Pre-load saved session audio in background
-  const preloadSavedSession = async (savedSession: any) => {
+  const preloadSavedSession = async (savedSession: ListeningSession) => {
     try {
       const { getAudioUrl } = await import('../constants/config');
       const { getAllSurahs } = await import('../services/database');
@@ -186,8 +181,6 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
 
       // Mark as loaded - audio is ready, just paused
       sessionLoadedRef.current = true;
-
-      console.log('[AudioContext] Audio pre-loaded and ready at position:', savedSession.position);
     } catch (error) {
       console.error('[AudioContext] Error pre-loading session:', error);
     }
@@ -227,13 +220,7 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
     const subscription = player.addListener(
       'playbackStatusUpdate',
       (status: AudioStatus) => {
-        console.log('[AudioContext] 🔊 Native event - playing:', status.playing, 'didJustFinish:', status.didJustFinish, 'currentTime:', status.currentTime.toFixed(1), 'duration:', status.duration?.toFixed(1));
-        const prevPlaying = isPlaying;
-        const newPlaying = status.playing;
-        if (prevPlaying !== newPlaying) {
-          console.log('▶️ [NATIVE EVENT] isPlaying changing:', prevPlaying, '→', newPlaying);
-        }
-        setIsPlaying(newPlaying);
+        setIsPlaying(status.playing);
 
         // Only update position/duration from player if session has been loaded
         // This prevents overwriting saved position with 0 before user clicks play
@@ -314,17 +301,13 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
   };
 
   const togglePlayPause = () => {
-    console.log('🎵 [TOGGLE] Called - isPlaying:', isPlaying, 'player.playing:', player.playing);
-
     // Replay finished track
     const isAtEnd = duration > 0 && position > 0 && (duration - position < 1);
     if (isAtEnd && !player.playing && currentTrack) {
-      console.log('🎵 [TOGGLE] Replaying from start');
       audioService.seekTo(0);
       audioService.resume();
     } else {
       // Simple toggle - audio is already loaded
-      console.log('🎵 [TOGGLE] Toggling play/pause');
       audioService.togglePlayPause();
     }
   };
@@ -376,7 +359,6 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
 
     const saveInterval = setInterval(() => {
       if (currentTrack && duration > 0) {
-        console.log('[AudioContext] Saving session:', currentTrack.surahName, 'position:', position.toFixed(1));
         audioStorage.saveListeningSession({
           reciterId: currentTrack.reciterId,
           reciterName: currentTrack.reciterName,
@@ -405,9 +387,7 @@ export function AudioProvider({ children, needsUpdateProp = false }: { children:
 
   // Save once when pausing
   useEffect(() => {
-    console.log('[AudioContext] 🔄 Pause save effect - isPlaying:', isPlaying, 'has currentTrack:', !!currentTrack, 'duration:', duration, 'sessionLoaded:', sessionLoadedRef.current);
     if (!isPlaying && currentTrack && duration > 0 && sessionLoadedRef.current) {
-      console.log('[AudioContext] ⏸️ Paused - saving final position:', position.toFixed(1));
       audioStorage.saveListeningSession({
         reciterId: currentTrack.reciterId,
         reciterName: currentTrack.reciterName,

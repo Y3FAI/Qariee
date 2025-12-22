@@ -39,7 +39,6 @@ class DownloadService {
       const dir = new Directory(Paths.document, this.audioDirectory);
       if (!dir.exists) {
         await dir.create();
-        console.log('Created download directory:', dir.uri);
       }
     } catch (error) {
       console.error('Error initializing download service:', error);
@@ -112,13 +111,11 @@ class DownloadService {
 
     // Check if already downloaded
     if (await this.isDownloaded(reciterId, surahNumber)) {
-      console.log(`Surah ${surahNumber} by ${reciterId} already downloaded`);
       return;
     }
 
     // Check if already downloading or queued
     if (this.activeDownloads.has(key) || this.downloadQueue.some(task => this.getDownloadKey(task.reciterId, task.surahNumber) === key)) {
-      console.log(`Download already in progress or queued: ${key}`);
       if (onProgress) {
         this.addProgressCallback(key, onProgress);
       }
@@ -220,8 +217,6 @@ class DownloadService {
           downloadedBytes: fileSize,
           status: 'completed',
         });
-
-        console.log(`Download completed: Surah ${task.surahNumber} by ${task.reciterId}`);
       }
     } catch (error) {
       console.error(`Error downloading surah ${task.surahNumber}:`, error);
@@ -258,7 +253,6 @@ class DownloadService {
     try {
       const download = await getDownload(reciterId, surahNumber);
       if (!download) {
-        console.log(`Download not found: ${reciterId}-${surahNumber}`);
         return;
       }
 
@@ -266,12 +260,10 @@ class DownloadService {
       const file = new File(Paths.document, download.local_file_path);
       if (file.exists) {
         await file.delete();
-        console.log(`Deleted file: ${download.local_file_path}`);
       }
 
       // Delete from database
       await dbDeleteDownload(reciterId, surahNumber);
-      console.log(`Deleted download record: ${reciterId}-${surahNumber}`);
     } catch (error) {
       console.error(`Error deleting download:`, error);
       throw error;

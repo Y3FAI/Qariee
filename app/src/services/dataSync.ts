@@ -39,7 +39,6 @@ export const initializeApp = async (): Promise<{
 
   if (isFirstLaunch) {
     // First launch: Load all data synchronously
-    console.log('First launch: Loading initial data...');
     await loadInitialData();
     await AsyncStorage.setItem(FIRST_LAUNCH_KEY, 'true');
     return { isFirstLaunch: true, needsUpdate: false };
@@ -48,7 +47,6 @@ export const initializeApp = async (): Promise<{
     const needsUpdate = await checkForUpdates();
 
     // Update in background
-    console.log('Subsequent launch: Using cached data, updating in background...');
     updateDataInBackground();
 
     return {
@@ -87,14 +85,6 @@ const checkForUpdates = async (): Promise<boolean> => {
     const needsUpdate = compareVersions(APP_VERSION, serverVersion) < 0;
     const isMandatory = compareVersions(APP_VERSION, minVersion) < 0;
 
-    console.log(`Version check: Current=${APP_VERSION}, Server=${serverVersion}, Min=${minVersion}`);
-
-    if (isMandatory) {
-      console.log('MANDATORY update required! App version is below minimum.');
-    } else if (needsUpdate) {
-      console.log('Optional update available!');
-    }
-
     return needsUpdate;
   } catch (error) {
     // Network unavailable - skip update check
@@ -131,8 +121,6 @@ const loadInitialData = async (): Promise<void> => {
 
     // Load bundled surahs data
     await loadSurahsData();
-
-    console.log('Initial data loaded successfully');
   } catch (error) {
     console.error('Error loading initial data:', error);
     throw error;
@@ -179,12 +167,7 @@ const fetchAndSaveReciters = async (): Promise<void> => {
     for (const reciter of data.reciters) {
       await insertReciter(reciter);
     }
-
-    console.log(`Loaded ${data.reciters.length} reciters from R2`);
-    console.log(`Updated CDN URL: ${data.settings.cdn_base_url}`);
   } catch (error) {
-    console.log('Network unavailable - using bundled reciters data');
-
     // Use bundled data as fallback
     await loadBundledReciters();
   }
@@ -212,8 +195,6 @@ const loadBundledReciters = async (): Promise<void> => {
     await setMetadata('app_version', APP_VERSION);
     await setMetadata('min_app_version', APP_VERSION);
     await setMetadata('db_version', '1.0.0');
-
-    console.log(`Loaded ${typedRecitersData.reciters.length} bundled reciters`);
   } catch (error) {
     console.error('Error loading bundled reciters:', error);
     throw error;
@@ -229,7 +210,6 @@ const loadSurahsData = async (): Promise<void> => {
     const surahsLoaded = await getMetadata('surahs_loaded');
 
     if (surahsLoaded === 'true') {
-      console.log('Surahs already loaded');
       return;
     }
 
@@ -239,7 +219,6 @@ const loadSurahsData = async (): Promise<void> => {
     }
 
     await setMetadata('surahs_loaded', 'true');
-    console.log(`Loaded ${surahsData.surahs.length} surahs`);
   } catch (error) {
     console.error('Error loading surahs:', error);
     throw error;
@@ -263,13 +242,10 @@ const updateDataInBackground = (): void => {
       });
 
       if (!response.ok) {
-        console.log('Background update skipped - network unavailable');
         return;
       }
 
       const data: AppDatabase = await response.json();
-
-      console.log('Updating app data...');
 
       // Update app settings
       await setMetadata('cdn_base_url', data.settings.cdn_base_url);
@@ -287,9 +263,6 @@ const updateDataInBackground = (): void => {
       for (const reciter of data.reciters) {
         await insertReciter(reciter);
       }
-
-      console.log('Background update completed successfully');
-      console.log(`Updated CDN URL: ${data.settings.cdn_base_url}`);
     } catch (error) {
       // Fail silently - network unavailable, will retry on next launch
     }
@@ -300,7 +273,6 @@ const updateDataInBackground = (): void => {
  * Trigger background update (for when network becomes available)
  */
 export const triggerBackgroundUpdate = (): void => {
-  console.log('Network connected - updating data from R2...');
   updateDataInBackground();
 };
 

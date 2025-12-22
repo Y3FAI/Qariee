@@ -46,8 +46,6 @@ export const initDatabase = async (): Promise<void> => {
 
     // Run migrations
     await runMigrations();
-
-    console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);
     throw error;
@@ -66,16 +64,12 @@ const runMigrations = async (): Promise<void> => {
 
     // Add color columns if they don't exist
     if (!hasColorPrimary) {
-      console.log('Running migration: Adding color_primary column');
       await db.execAsync('ALTER TABLE reciters ADD COLUMN color_primary TEXT DEFAULT "#282828"');
     }
 
     if (!hasColorSecondary) {
-      console.log('Running migration: Adding color_secondary column');
       await db.execAsync('ALTER TABLE reciters ADD COLUMN color_secondary TEXT DEFAULT "#404040"');
     }
-
-    console.log('Migrations completed successfully');
   } catch (error) {
     console.error('Error running migrations:', error);
     throw error;

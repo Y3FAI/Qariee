@@ -1,6 +1,7 @@
 import { useAudioPlayer, AudioSource, AudioStatus } from 'expo-audio';
 import { EventSubscription } from 'expo-modules-core';
 import { downloadService } from './downloadService';
+// eslint-disable-next-line import/no-named-as-default
 import MediaControl, { Command, PlaybackState as MediaPlaybackState } from 'expo-media-control';
 import { getReciterPhotoUrl } from '../constants/config';
 import BackgroundTimer from 'react-native-background-timer';
@@ -248,10 +249,6 @@ class AudioService {
    * Load a track without auto-playing (for resuming at specific position)
    */
   async loadTrack(track: Track, queue: Track[] = []) {
-    console.log('📀 [loadTrack] START');
-    console.log('📀 [loadTrack] Track:', track.surahName);
-    console.log('📀 [loadTrack] player.playing before:', this.player?.playing);
-
     if (!this.player) {
       throw new Error('Audio player not initialized');
     }
@@ -298,21 +295,16 @@ class AudioService {
 
       // Pause existing playback
       if (this.player.playing) {
-        console.log('📀 [loadTrack] Pausing existing playback');
         this.player.pause();
       }
 
       // Replace audio but don't play yet
-      console.log('📀 [loadTrack] Replacing audio source');
       this.player.replace(audioSource as AudioSource);
-      console.log('📀 [loadTrack] player.playing after replace:', this.player.playing);
 
       // Wait for audio to load
       await new Promise(resolve => setTimeout(resolve, 100));
-      console.log('📀 [loadTrack] player.playing after wait:', this.player.playing);
 
       await this.updateMediaControlMetadata(track);
-      console.log('📀 [loadTrack] END');
     } catch (error) {
       console.error('[AudioService] Error loading track:', error);
       throw error;
@@ -323,13 +315,11 @@ class AudioService {
    * Play a track
    */
   async play(track: Track, queue: Track[] = [], isNewSession: boolean = true) {
-    console.log('[AudioService] 🔄 play() START - Track:', track.surahName, 'queue length:', queue.length, 'isNewSession:', isNewSession);
     if (!this.player) {
       console.error('[AudioService] ❌ play() - Player not initialized');
       throw new Error('Audio player not initialized');
     }
 
-    console.log('[AudioService] 📊 play() - Setting currentTrack to:', track.surahName);
     this.currentTrack = track;
 
     // Filter queue based on offline status
@@ -376,25 +366,19 @@ class AudioService {
       const audioSource = localPath || track.audioUrl;
 
       // Pause existing playback
-      console.log('[AudioService] ⏸️ play() - player.playing before pause:', this.player.playing);
       if (this.player.playing) {
-        console.log('[AudioService] ⏸️ play() - Pausing existing playback');
         this.player.pause();
-        console.log('[AudioService] ⏸️ play() - player.playing after pause:', this.player.playing);
       }
 
       // Replace and play
-      console.log('[AudioService] 🔁 play() - Replacing audio source:', audioSource.substring(0, 50) + '...');
       this.player.replace(audioSource as AudioSource);
 
       // Small buffer to allow native player to process the replace
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      console.log('[AudioService] ▶️ play() - Starting playback');
       this.player.play();
 
       // Verify playback started with INCREASED ROBUSTNESS
-      console.log('[AudioService] 🔄 play() - Starting playback verification');
       let playbackStarted = false;
 
       // Attempt for up to 3 seconds (30 * 100ms)
@@ -402,28 +386,20 @@ class AudioService {
       for (let attempt = 0; attempt < 30; attempt++) {
         if (this.player.playing) {
           playbackStarted = true;
-          console.log(`[AudioService] ✅ play() - Playback confirmed started on attempt ${attempt + 1}`);
           break;
         }
 
         // Wait 100ms between checks
         await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Log progress every 10 attempts (1 second)
-        if ((attempt + 1) % 10 === 0) {
-           console.log(`[AudioService] ⏳ play() - Still waiting for playback... (attempt ${attempt + 1}/30)`);
-        }
       }
 
       // Final attempt to kickstart if still not playing after 3 seconds
       if (!playbackStarted) {
-        console.log('[AudioService] ⚠️ play() - Playback not started after wait, trying play() command one last time');
         this.player.play();
         // Give it one last 500ms grace period
         await new Promise(resolve => setTimeout(resolve, 500));
         if (this.player.playing) {
             playbackStarted = true;
-            console.log('[AudioService] ✅ play() - Playback started after retry');
         }
       }
 
@@ -432,13 +408,10 @@ class AudioService {
         throw new Error('Failed to start playback - timed out');
       }
 
-      console.log('[AudioService] ✅ play() - Playback successful, updating media controls');
       await this.updateMediaControlMetadata(track);
 
       // Start monitoring playback for auto-advance
-      console.log('[AudioService] 🔄 play() - Starting playback monitor');
       this.startPlaybackMonitor();
-      console.log('[AudioService] ✅ play() - COMPLETE for track:', track.surahName);
     } catch (error) {
       console.error('[AudioService] Error playing track:', error);
       // If playback fails, clear the broken state
@@ -458,8 +431,6 @@ class AudioService {
       const artworkUri = getReciterPhotoUrl(track.reciterId);
       const duration = this.player?.duration || 0;
       const position = this.player?.currentTime || 0;
-
-      console.log('[AudioService] Setting notification artwork:', artworkUri);
 
       await MediaControl.updateMetadata({
         title: track.surahName,
@@ -566,9 +537,6 @@ class AudioService {
    * Pause playback
    */
   async pause() {
-    console.log('⏸️ [pause] Called - Stack trace:', new Error().stack?.split('\n').slice(1, 4).join(' ← '));
-    console.log('⏸️ [pause] player.playing before:', this.player?.playing);
-
     if (!this.player) {
       console.warn('[AudioService] Cannot pause - player not initialized');
       return;
@@ -576,7 +544,6 @@ class AudioService {
 
     try {
       this.player.pause();
-      console.log('⏸️ [pause] player.playing after:', this.player.playing);
 
       // Stop playback monitoring when paused
       this.stopPlaybackMonitor();
@@ -584,7 +551,6 @@ class AudioService {
       // Update media control state with current position
       const position = this.player.currentTime;
       await MediaControl.updatePlaybackState(MediaPlaybackState.PAUSED, position);
-      console.log('⏸️ [pause] Complete');
     } catch (error) {
       console.error('[AudioService] Error pausing:', error);
     }
@@ -594,10 +560,6 @@ class AudioService {
    * Resume playback
    */
   async resume() {
-    console.log('▶️ [resume] Called');
-    console.log('▶️ [resume] player.playing before:', this.player?.playing);
-    console.log('▶️ [resume] player.currentTime:', this.player?.currentTime);
-
     if (!this.player) {
       console.warn('[AudioService] Cannot resume - player not initialized');
       return;
@@ -605,8 +567,6 @@ class AudioService {
 
     try {
       this.player.play();
-      console.log('▶️ [resume] player.play() called');
-      console.log('▶️ [resume] player.playing after:', this.player.playing);
 
       // Start playback monitoring when resumed
       this.startPlaybackMonitor();
@@ -614,13 +574,11 @@ class AudioService {
       // Update media control state with current position
       const position = this.player.currentTime;
       await MediaControl.updatePlaybackState(MediaPlaybackState.PLAYING, position);
-      console.log('▶️ [resume] Complete');
     } catch (error) {
       console.error('[AudioService] Error resuming:', error);
 
       // If player was released, try to reinitialize playback
       if (error instanceof Error && error.message.includes('released')) {
-        console.log('[AudioService] Player was released, attempting to reload track');
         if (this.currentTrack) {
           await this.play(this.currentTrack, this.queue, false);
         }
@@ -645,14 +603,10 @@ class AudioService {
    * Seek to position in seconds
    */
   async seekTo(seconds: number) {
-    console.log('⏩ [seekTo] Called with seconds:', seconds);
-    console.log('⏩ [seekTo] player.currentTime before:', this.player?.currentTime);
-
     if (this.player) {
       this.player.seekTo(seconds);
       // Give it a moment to process
       await new Promise(resolve => setTimeout(resolve, 50));
-      console.log('⏩ [seekTo] player.currentTime after:', this.player.currentTime);
     }
   }
 
@@ -785,19 +739,15 @@ class AudioService {
    * Play next track in queue (or repeat current if in repeat mode)
    */
   async playNext() {
-    console.log('[AudioService] 🔄 playNext() START - playbackMode:', this.playbackMode, 'queue length:', this.queue.length);
     // Prevent duplicate calls
     if (this.isProcessingNext) {
-      console.log('[AudioService] ⏸️ playNext() - Already processing, skipping');
       return;
     }
     this.isProcessingNext = true;
     this.isProcessingNextSince = Date.now();
-    console.log('[AudioService] 📝 playNext() - Set isProcessingNext = true at', this.isProcessingNextSince);
 
     try {
       // In repeat mode, replay current track from beginning
-      console.log('[AudioService] 🔄 playNext() - Checking repeat mode:', this.playbackMode === 'repeat', 'has currentTrack:', !!this.currentTrack);
       if (this.playbackMode === 'repeat' && this.currentTrack) {
         try {
           // Seek to beginning and play (more efficient than replace)
@@ -853,7 +803,6 @@ class AudioService {
         if (this.isOffline) {
           const hasFile = await downloadService.isDownloaded(nextTrack.reciterId, nextTrack.surahNumber);
           if (!hasFile) {
-            console.log(`[AudioService] ⏭️ Skipping undownloaded track in offline mode: ${nextTrack.surahName}`);
             continue; // Skip this iteration, try next track
           }
         }
@@ -870,15 +819,12 @@ class AudioService {
 
       // If queue empty or no playable tracks found
       if (!playableFound) {
-        console.log('[AudioService] ⏹️ No playable tracks remaining. Stopping.');
         await this.pause();
       }
 
     } finally {
-      console.log('[AudioService] 📝 playNext() - Setting isProcessingNext = false, was set at', this.isProcessingNextSince);
       this.isProcessingNext = false;
       this.isProcessingNextSince = 0;
-      console.log('[AudioService] ✅ playNext() - COMPLETE');
     }
   }
 

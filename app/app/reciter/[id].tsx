@@ -221,15 +221,12 @@ export default function ReciterDetailScreen() {
     if (isCurrentlyDownloading) {
       // Cancel if actively downloading
       await cancelDownload(reciter.id, surah.number);
-      console.log('Cancelled download:', surah.number);
     } else if (isAlreadyDownloaded) {
       // Delete if already downloaded
       await deleteDownload(reciter.id, surah.number);
-      console.log('Deleted surah:', surah.number);
     } else {
       // Download if not downloaded
       await downloadSurah(reciter.id, surah.number);
-      console.log('Downloading surah:', surah.number);
     }
   };
 

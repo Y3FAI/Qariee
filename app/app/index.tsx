@@ -12,9 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
-import { useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllReciters } from '../src/services/database';
 import { getReciterPhotoUrl } from '../src/constants/config';

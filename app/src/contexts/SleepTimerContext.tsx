@@ -42,7 +42,6 @@ export function SleepTimerProvider({ children }: { children: ReactNode }) {
         // App came to foreground - check if timer has expired
         const now = Date.now();
         if (now >= endTimeRef.current) {
-          console.log('[SleepTimer] Timer expired while backgrounded - pausing audio');
           handleTimerExpired();
         }
       }

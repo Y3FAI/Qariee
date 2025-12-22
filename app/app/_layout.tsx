@@ -112,14 +112,9 @@ export default function RootLayout() {
     useEffect(() => {
         async function prepare() {
             try {
-                const { isFirstLaunch, needsUpdate: appNeedsUpdate } =
-                    await initializeApp()
+                const { needsUpdate: appNeedsUpdate } = await initializeApp()
 
-                if (isFirstLaunch) {
-                    console.log("First launch: Data loaded")
-                } else {
-                    console.log("Using cached data, updating in background")
-                }
+                // Data loaded successfully
 
                 setNeedsUpdate(appNeedsUpdate)
                 setIsReady(true)
