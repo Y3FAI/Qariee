@@ -14,6 +14,62 @@
             "name_ar": "محمود خليل الحصري",
             "color_primary": "#4A90E2",
             "color_secondary": "#8CB4FF"
+        },
+        {
+            "id": "mishary-alafasy",
+            "name_en": "Mishary Alafasy",
+            "name_ar": "مشاري العفاسي",
+            "color_primary": "#E8E8E8",
+            "color_secondary": "#F5F5F5"
+        },
+        {
+            "id": "abdul-basit",
+            "name_en": "Abdul Basit Abdul Samad",
+            "name_ar": "عبد الباسط عبد الصمد",
+            "color_primary": "#FF6B6B",
+            "color_secondary": "#FFA5A5"
+        },
+        {
+            "id": "sudais",
+            "name_en": "Abdur-Rahman As-Sudais",
+            "name_ar": "عبد الرحمن السديس",
+            "color_primary": "#FFE66D",
+            "color_secondary": "#FFF4A3"
+        },
+        {
+            "id": "jaber",
+            "name_en": "Ali Jaber",
+            "name_ar": "علي جابر",
+            "color_primary": "#9C27B0",
+            "color_secondary": "#CE93D8"
+        },
+        {
+            "id": "ayoub",
+            "name_en": "Mohamed Ayoub",
+            "name_ar": "محمد أيوب",
+            "color_primary": "#FF9800",
+            "color_secondary": "#FFCC80"
+        },
+        {
+            "id": "minshawi",
+            "name_en": "Muhammad Siddiq Al Minshawi",
+            "name_ar": "محمد صديق المنشاوي",
+            "color_primary": "#795548",
+            "color_secondary": "#BCAAA4"
+        },
+        {
+            "id": "khayat",
+            "name_en": "Abdullah Al-Khayat",
+            "name_ar": "عبد الله خياط",
+            "color_primary": "#E91E63",
+            "color_secondary": "#F8BBD0"
+        },
+        {
+            "id": "maher",
+            "name_en": "Maher Al-Muaiqly",
+            "name_ar": "ماهر المعيقلي",
+            "color_primary": "#4A90E2",
+            "color_secondary": "#8CB4FF"
         }
     ]
 }

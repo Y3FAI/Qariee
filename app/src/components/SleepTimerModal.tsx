@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 28,
         paddingTop: 24,
         paddingHorizontal: 20,
-        paddingBottom: Platform.OS === "ios" ? 40 : 24,
+        paddingBottom: 40,
         width: "100%",
         alignSelf: "center",
     },
