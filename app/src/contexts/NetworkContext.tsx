@@ -42,8 +42,9 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Device is offline if not connected OR internet is not reachable
-  const isOffline = !isConnected || isInternetReachable === false;
+  // Device is offline if not connected OR internet is not explicitly reachable
+  // (treat null/unknown as offline to handle Android limitations)
+  const isOffline = !isConnected || isInternetReachable !== true;
 
   return (
     <NetworkContext.Provider

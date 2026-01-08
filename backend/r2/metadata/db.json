@@ -11,7 +11,7 @@
         {
             "id": "hussary",
             "name_en": "Mahmoud Khalil Al-Hussary",
-            "name_ar": "محمود خليل الحصري",
+            "name_ar": "محمود الحصري",
             "color_primary": "#4A90E2",
             "color_secondary": "#8CB4FF",
             "sort_order": 1
@@ -75,7 +75,7 @@
         {
             "id": "minshawi",
             "name_en": "Muhammad Siddiq Al Minshawi",
-            "name_ar": "محمد صديق المنشاوي",
+            "name_ar": "محمد المنشاوي",
             "color_primary": "#795548",
             "color_secondary": "#BCAAA4",
             "sort_order": 9

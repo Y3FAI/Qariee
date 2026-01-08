@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useRouter, useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
@@ -26,6 +27,22 @@ import { getFontFamily } from '../src/utils/fonts';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
+// Pre-defined subtle dark gradients - beautiful, noticeable tints
+const SUBTLE_GRADIENTS = [
+  ['#2a2a40', '#242430', '#1e1e28', '#121212'], // Blue tint
+  ['#2a2a2a', '#242424', '#1e1e1e', '#121212'], // Pure dark tint
+  ['#402a2a', '#302424', '#281e1e', '#121212'], // Red tint
+  ['#2a402a', '#243024', '#1e281e', '#121212'], // Green tint
+  ['#302a40', '#282430', '#241e28', '#121212'], // Purple tint
+];
+
+/**
+ * Pick a random subtle gradient on app load
+ */
+const pickRandomGradient = (): readonly [string, string, string, string] => {
+  return SUBTLE_GRADIENTS[Math.floor(Math.random() * SUBTLE_GRADIENTS.length)];
+};
+
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -34,6 +51,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const arabic = isArabic();
   const backPressedOnce = useRef(false);
+  const [gradientColors] = useState(() => pickRandomGradient());
 
   const openDrawer = () => {
     navigation.dispatch(DrawerActions.openDrawer());
@@ -130,37 +148,45 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <OfflineIndicator />
-      <View style={[styles.header, { direction: 'ltr' }]}>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={openDrawer}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="menu" size={28} color="#efefd5" />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { fontFamily: getFontFamily(arabic, 'bold'), textAlign: arabic ? 'right' : 'left', flex: 1 }]}>
-          {t('reciters')}
-        </Text>
-      </View>
-      <FlatList
-        data={reciters}
-        renderItem={renderReciterCard}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.listContent}
-        columnWrapperStyle={styles.columnWrapper}
-      />
-      <MiniPlayer />
-    </SafeAreaView>
+    <LinearGradient
+      colors={gradientColors}
+      locations={[0, 0.3, 0.7, 1]}
+      style={styles.container}
+    >
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <OfflineIndicator />
+        <View style={[styles.header, { direction: 'ltr' }]}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={openDrawer}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="menu" size={28} color="#efefd5" />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { fontFamily: getFontFamily(arabic, 'bold'), textAlign: arabic ? 'right' : 'left', flex: 1 }]}>
+            {t('reciters')}
+          </Text>
+        </View>
+        <FlatList
+          data={reciters}
+          renderItem={renderReciterCard}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={styles.columnWrapper}
+        />
+        <MiniPlayer />
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+  },
+  safeArea: {
+    flex: 1,
   },
   centerContainer: {
     flex: 1,

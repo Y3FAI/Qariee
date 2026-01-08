@@ -113,7 +113,7 @@ export default function ReciterDetailScreen() {
         const backHandler = BackHandler.addEventListener(
             "hardwareBackPress",
             () => {
-                router.back()
+                router.replace("/")
                 return true // Prevent default back behavior
             },
         )
@@ -403,8 +403,8 @@ export default function ReciterDetailScreen() {
             {/* Back Button - Above header */}
             <TouchableOpacity
                 style={styles.backButton}
-                onPress={() => router.back()}
-                activeOpacity={0.01}
+                onPress={() => router.replace("/")}
+                activeOpacity={0.7}
             >
                 <Ionicons
                     name="chevron-back"
@@ -506,7 +506,7 @@ export default function ReciterDetailScreen() {
                                 : t("download_all")}
                         </Text>
                         <Ionicons
-                            name={allDownloaded ? "trash" : "arrow-down-circle"}
+                            name={allDownloaded ? "close-circle-outline" : "arrow-down-circle"}
                             size={24}
                             color="#efefd5"
                         />

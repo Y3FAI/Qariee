@@ -248,14 +248,16 @@ export default function PlayerScreen() {
                     setSleepTimerModalVisible(false)
                     return true // Prevent default back behavior
                 }
-                // Otherwise, navigate back
-                router.back()
+                // Always go to reciter page
+                if (currentTrack) {
+                    router.replace(`/reciter/${currentTrack.reciterId}`)
+                }
                 return true // Prevent default back behavior
             },
         )
 
         return () => backHandler.remove()
-    }, [sleepTimerModalVisible, router])
+    }, [sleepTimerModalVisible, currentTrack, router])
 
     // Reset seeking state when position catches up
     useEffect(() => {
@@ -499,14 +501,12 @@ export default function PlayerScreen() {
                 <TouchableOpacity
                     style={styles.backButton}
                     onPress={() => {
-                        // Go to reciter page if we have a current track
+                        // Always go to reciter page
                         if (currentTrack) {
-                            router.push(`/reciter/${currentTrack.reciterId}`)
-                        } else {
-                            router.back()
+                            router.replace(`/reciter/${currentTrack.reciterId}`)
                         }
                     }}
-                    activeOpacity={0.01}
+                    activeOpacity={0.7}
                 >
                     <Ionicons
                         name="chevron-back"
