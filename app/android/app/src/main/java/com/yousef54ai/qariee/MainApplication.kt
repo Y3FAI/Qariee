@@ -1,4 +1,4 @@
-package com.yousef54ai.rabi
+package com.yousef54ai.qariee
 
 import android.app.Application
 import android.content.res.Configuration

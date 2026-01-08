@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.yousef54ai.rabi'
+    namespace 'com.yousef54ai.qariee'
     defaultConfig {
-        applicationId 'com.yousef54ai.rabi'
+        applicationId 'com.yousef54ai.qariee'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,7 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import { Reciter, Surah, Download } from '../types';
 
-const db = SQLite.openDatabaseSync('rabi.db');
+const db = SQLite.openDatabaseSync('database.db');
 
 export const initDatabase = async (): Promise<void> => {
   try {

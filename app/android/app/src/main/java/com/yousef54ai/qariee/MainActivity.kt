@@ -1,4 +1,4 @@
-package com.yousef54ai.rabi
+package com.yousef54ai.qariee
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

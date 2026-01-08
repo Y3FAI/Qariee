@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================================
-# Rabi R2 Sync Script
+# Qariee R2 Sync Script
 # Uploads local backend/r2/ files to Cloudflare R2 bucket
 # ============================================================================
 
@@ -19,7 +19,7 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOCAL_R2_DIR="$PROJECT_ROOT/backend/r2"
-BUCKET_NAME="rabi"
+BUCKET_NAME="qariee"
 
 # Check if wrangler is installed
 if ! command -v wrangler &> /dev/null; then
@@ -41,7 +41,7 @@ if [ ! -d "$LOCAL_R2_DIR" ]; then
     exit 1
 fi
 
-echo -e "${BLUE}📦 Rabi R2 Sync Script${NC}"
+echo -e "${BLUE}📦 Qariee R2 Sync Script${NC}"
 echo -e "${BLUE}=======================${NC}"
 echo "Local source: $LOCAL_R2_DIR"
 echo "R2 bucket:    $BUCKET_NAME"
@@ -114,7 +114,7 @@ if [ $fail_count -eq 0 ]; then
     echo -e "${BLUE}🔗 Testing CDN URLs:${NC}"
 
     # Test db.json
-    db_url="https://rabi.y3f.me/metadata/db.json"
+    db_url="https://qariee-storage.y3f.me/metadata/db.json"
     if curl -s -f -o /dev/null "$db_url"; then
         echo -e "  ${GREEN}✅ $db_url${NC}"
     else
@@ -123,7 +123,7 @@ if [ $fail_count -eq 0 ]; then
 
     # Test reciter images
     for reciter in mishary-alafasy abdul-basit sudais; do
-        img_url="https://rabi.y3f.me/images/reciters/$reciter.jpg"
+        img_url="https://qariee-storage.y3f.me/images/reciters/$reciter.jpg"
         if curl -s -f -o /dev/null "$img_url"; then
             echo -e "  ${GREEN}✅ $img_url${NC}"
         else
@@ -137,4 +137,4 @@ fi
 
 echo ""
 echo -e "${GREEN}🚀 Sync completed!${NC}"
-echo "CDN Base URL: https://rabi.y3f.me"
+echo "CDN Base URL: https://qariee-storage.y3f.me"

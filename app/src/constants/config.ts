@@ -1,5 +1,5 @@
 // Default CDN URL - can be overridden by settings from db.json
-let CDN_BASE_URL = 'https://rabi.y3f.me';
+let CDN_BASE_URL = 'https://qariee-storage.y3f.me';
 
 export const getCdnBaseUrl = (): string => {
   return CDN_BASE_URL;

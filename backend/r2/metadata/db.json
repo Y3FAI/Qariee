@@ -1,8 +1,8 @@
 {
     "version": "1.0.0",
     "settings": {
-        "cdn_base_url": "https://rabi.y3f.me",
-        "app_name": "Rabi",
+        "cdn_base_url": "https://qariee-storage.y3f.me",
+        "app_name": "Qariee",
         "support_email": "yousef.contact.apps@gmail.com",
         "app_version": "1.0.0",
         "min_app_version": "1.0.0"

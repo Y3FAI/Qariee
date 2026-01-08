@@ -11,7 +11,7 @@
   "downloaded": "Downloaded",
   "verses": "verses",
   "surah": "Surah",
-  "update_available": "A new version of Rabi is available! Please update to get the latest features and improvements.",
+  "update_available": "A new version of Qariee is available! Please update to get the latest features and improvements.",
   "update": "Update",
   "shuffle": "Shuffle",
   "download_all": "Download All",
@@ -33,11 +33,11 @@
   "exit_app": "Exit App",
   "press_back_again_to_exit": "Press back again to exit",
   "ok": "OK",
-  "app_name": "Rabi",
+  "app_name": "Qariee",
   "version": "Version",
   "settings": "Settings",
   "about": "About",
-  "about_description": "Rabi allows you to listen to the Holy Quran with the voices of famous reciters, with the ability to download for offline listening.",
+  "about_description": "Qariee allows you to listen to the Holy Quran with the voices of famous reciters, with the ability to download for offline listening.",
   "features": "Features",
   "feature_streaming": "High-quality audio streaming",
   "feature_offline": "Download for offline listening",
@@ -49,5 +49,5 @@
   "developer": "Developer",
   "developer_name": "Yousef (Y3F)",
   "contact": "Contact",
-  "thank_you": "Thank you for using Rabi!"
+  "thank_you": "Thank you for using Qariee!"
 }

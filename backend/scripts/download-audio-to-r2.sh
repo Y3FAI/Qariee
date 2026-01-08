@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================================
-# Rabi Audio Download & Upload Script (Final)
+# Qariee Audio Download & Upload Script (Final)
 # ============================================================================
 
 # Treat unset variables as error
@@ -17,8 +17,8 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUCKET_NAME="rabi"
-TEMP_DIR="/tmp/rabi-audio-$(date +%s)"
+BUCKET_NAME="qariee"
+TEMP_DIR="/tmp/qariee-audio-$(date +%s)"
 
 # Default settings
 DEFAULT_RECITER="hussary"

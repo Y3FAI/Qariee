@@ -1,4 +1,4 @@
-# Rabi - Quran Recitation App
+# Qariee - Quran Recitation App
 
 A beautiful, modern React Native app for listening to Quran recitations.
 
