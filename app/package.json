@@ -5,8 +5,8 @@
     "scripts": {
         "start": "expo start",
         "prebuild": "npx expo prebuild --clean",
-        "dev-install": "adb uninstall com.yousef54ai.qariee; cd android && ./gradlew installDebug && cd ..",
-        "standalone-install": "cd android && ./gradlew assembleRelease && cd .. && adb uninstall com.yousef54ai.qariee && adb install -r android/app/build/outputs/apk/release/app-release.apk",
+        "dev": "adb uninstall com.yousef54ai.qariee; cd android && ./gradlew installDebug && cd ..",
+        "prod": "cd android && ./gradlew assembleRelease && cd .. && adb uninstall com.yousef54ai.qariee && adb install -r android/app/build/outputs/apk/release/app-release.apk",
         "android": "expo run:android",
         "ios": "expo run:ios",
         "web": "expo start --web",

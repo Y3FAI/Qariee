@@ -1,18 +1,37 @@
-# Qariee (Rabi) - File Structure
+# Overview
 
-> Complete directory tree of the repository
+Qariee is a mobile application for offline Quran audio playback, built with React Native and Expo. It features a custom audio playback engine, download management, and synchronization with a CDN backend.
+
+Its goal is to provide a fast, reliable, and user-friendly experience for Quran listeners worldwide.
+
+# File Structure
+
+## Key Files
+
+| File               | Lines | Purpose                 |
+| ------------------ | ----- | ----------------------- |
+| audioService.ts    | 1151  | Playback engine + queue |
+| AudioContext.tsx   | 516   | Audio state management  |
+| downloadService.ts | 382   | Download queue system   |
+| dataSync.ts        | 257   | CDN synchronization     |
+| database.ts        | 194   | SQLite operations       |
+| player.tsx         | ~900  | Full-screen player UI   |
+| reciter/[id].tsx   | ~650  | Surah list screen       |
+| surahName.ts       | 114   | Ligature mappings       |
+
+> Complete directory tree
 
 ## Repository Root
 
 ```
 Qariee/
 ├── . gitignore
-├── README. md
-├── TODO.md
-├── app/                          # Main React Native application
-├── assets/                       # Root-level assets
-├── backend/                      # CDN management scripts
-└── docs/                         # Documentation
+├── CLAUDE. md                     # Claude AI context
+├── README.md
+├── backend.md                    # Backend documentation
+├── dev.md                        # Development guide
+├── app/                          # React Native application
+└── backend/                      # CDN management
 ```
 
 ---
@@ -21,11 +40,11 @@ Qariee/
 
 ```
 app/
+├── android/                      # Android native project
 ├── app/                          # Screens (expo-router)
 ├── assets/                       # App assets
 ├── src/                          # Source code
-├── app.json                      # Expo config
-├── dataflow.md                   # Architecture doc
+├── app.json                      # Expo configuration
 ├── eslint.config.js
 ├── jest.config.js
 ├── jest.setup.js
@@ -42,11 +61,11 @@ app/
 app/app/
 ├── _layout.tsx                   # Root layout + providers
 ├── index.tsx                     # Home (reciter grid)
-├── player.tsx                    # Full-screen player
+├── player. tsx                    # Full-screen player
 ├── settings.tsx                  # Settings screen
 ├── about.tsx                     # About screen
 └── reciter/
-    └── [id].tsx                  # Reciter detail (dynamic route)
+    └── [id]. tsx                  # Reciter detail
 ```
 
 ---
@@ -55,13 +74,14 @@ app/app/
 
 ```
 app/src/
-├── components/                   # UI components
-├── constants/                    # Config & constants
-├── contexts/                     # React Context providers
-├── locales/                      # i18n translations
-├── services/                     # Business logic
-├── types/                        # TypeScript types
-└── utils/                        # Helpers
+├── components/                   # UI components (7 files)
+├── config/                       # Special config (1 file)
+├── constants/                    # App constants (2 files)
+├── contexts/                     # React contexts (4 files)
+├── locales/                      # Translations (2 files)
+├── services/                     # Business logic (6 files)
+├── types/                        # TypeScript types (1 file)
+└── utils/                        # Utilities (1 file)
 ```
 
 ---
@@ -70,13 +90,22 @@ app/src/
 
 ```
 app/src/components/
-├── CircularProgress. tsx          # Download progress circle
-├── CustomDrawer.tsx              # Side menu drawer
+├── CircularProgress. tsx          # Download progress
+├── CustomDrawer.tsx              # Side drawer menu
 ├── MiniPlayer.tsx                # Bottom player bar
-├── OfflineIndicator.tsx          # Network status banner
-├── SleepTimerModal.tsx           # Sleep timer modal
+├── OfflineIndicator.tsx          # Network status
+├── SleepTimerModal.tsx           # Sleep timer UI
 ├── SurahName.tsx                 # Arabic calligraphy
 └── UpdateBanner.tsx              # Update notification
+```
+
+---
+
+## `/app/src/config`
+
+```
+app/src/config/
+└── surahName.ts                  # Surah ligature mapping (114 surahs)
 ```
 
 ---
@@ -85,8 +114,8 @@ app/src/components/
 
 ```
 app/src/constants/
-├── config.ts                     # CDN URLs + config
-└── quranDivisions.ts             # Quran structure data
+├── config.ts                     # CDN URLs (qariee-storage.y3f.me)
+└── quranDivisions.ts             # Quran structure grouping
 ```
 
 ---
@@ -107,10 +136,10 @@ app/src/contexts/
 
 ```
 app/src/services/
-├── audioService. ts               # Playback engine (1151 lines)
+├── audioService.ts               # Playback engine (1151 lines)
 ├── audioStorage.ts               # Session persistence
-├── database.ts                   # SQLite operations
-├── dataSync.ts                   # CDN sync
+├── database.ts                   # SQLite operations (database.db)
+├── dataSync.ts                   # CDN synchronization
 ├── downloadService.ts            # Download manager
 └── i18n.ts                       # i18next config
 ```
@@ -131,7 +160,7 @@ app/src/locales/
 
 ```
 app/src/types/
-└── index.ts                      # All TypeScript types
+└── index.ts                      # All TypeScript interfaces
 ```
 
 ---
@@ -140,7 +169,7 @@ app/src/types/
 
 ```
 app/src/utils/
-└── fonts.ts                      # Font helpers
+└── fonts.ts                      # Font helpers (Tajawal, Inter)
 ```
 
 ---
@@ -150,7 +179,7 @@ app/src/utils/
 ```
 app/assets/
 ├── data/
-│   ├── reciters.json            # Bundled reciter (fallback)
+│   ├── reciters.json            # Fallback reciter data
 │   └── surahs.json              # All 114 surahs
 ├── fonts/
 │   └── surah_names.ttf          # Arabic calligraphy font
@@ -167,92 +196,90 @@ app/assets/
 
 ```
 backend/
-├── README.md
 ├── r2/                           # Local R2 mirror
-│   ├── metadata/
-│   │   └── db.json              # App database
-│   └── images/
-│       └── reciters/
-│           └── hussary.jpg
-├── sync-to-r2.sh                # Upload metadata/images
-└── download-audio-to-r2.sh      # Upload audio files
+│   ├── images/
+│   │   └── reciters/            # Reciter photos
+│   └── metadata/
+│       └── db.json              # App database
+└── scripts/
+    ├── sync-to-r2.sh            # Upload metadata/images
+    └── download-audio-to-r2.sh  # Upload audio files
 ```
 
----
+# Development Quick Reference
 
-## `/docs` - Documentation
+## Core Architecture
 
+**Principles**: Offline-first, hybrid storage (SQLite metadata + File System MP3s), background sync, native media controls, bilingual (AR/EN with RTL)
+
+**Singleton Services**: `audioService` & `downloadService` - single instances for consistent state across app
+
+**Provider Hierarchy**: NetworkProvider → AudioProvider → SleepTimerProvider → DownloadProvider → Drawer → Screens
+
+## Audio Service (audioService.ts)
+
+**Playback Modes**:
+- `sequential`: [1] → [2] → [3] → [STOP]
+- `shuffle`: Random queue, avoids last 5 played tracks
+- `repeat`: [1] → [1] → [1] → ...
+
+**Key Features**: Smart offline queue (filters undownloaded), played tracking (Set<string>), shuffle history (last 5), iterative playNext(), safety timeout (30s), throttled metadata updates (1s)
+
+**Session Persistence**: Saves to AsyncStorage every 1s while playing (position, queue, playedTrackIds, shuffleHistory, playedTracksOrder)
+
+## Download Service (downloadService.ts)
+
+**Max Concurrent**: 2 downloads
+**Storage Path**: `{DOCUMENT_DIRECTORY}/audio/{reciterId}/{surahNumber}.mp3`
+**File System**: Uses expo-file-system new API (`File`, `Directory`, `Paths`)
+
+## Database (database.db)
+
+**Schema**:
+- `reciters`: id, name_en, name_ar, color_primary, color_secondary
+- `surahs`: number, name_ar, name_en
+- `downloads`: reciter_id, surah_number, local_file_path, downloaded_at (composite PK)
+- `app_metadata`: key, value
+
+## CDN URLs (config.ts)
+
+```typescript
+// Base: qariee-storage.y3f.me
+getAppDatabaseUrl() // /metadata/db.json
+getReciterPhotoUrl(reciterId) // /images/reciters/{reciterId}.jpg
+getAudioUrl(reciterId, surahNumber) // /audio/{reciterId}/{surahNumber:003}.mp3
 ```
-docs/
-├── DEV.md                        # Development guide
-├── FINDINGS.md                   # Dev findings
-├── HISTORY.md                    # Change log
-├── IDEAS.md                      # Feature ideas
-├── TASKS.MD                      # Task list
-├── dataflow.md                   # Architecture
-├── production.md                 # Production guide
-├── publishing-checklist. md       # Store checklist
-├── review.md                     # Code review
-├── tests.md                      # Testing docs
-└── unit-testing-strategy.md     # Test strategy
-```
 
----
+## Data Flow
 
-## `/assets` - Root Assets
+**First Launch**: Fetch db.json (or fallback bundled) → Insert reciters → Insert 114 surahs → Set 'first_launch_complete'
+**Subsequent**: Load SQLite immediately → Background sync (fire & forget)
 
-```
-assets/
-├── banner.png                    # Repository banner
-├── icon.png                      # App icon
-├── notification_icon.png         # Notification icon
-├── splash.png                    # Splash screen
-└── icons/                        # Additional icons
-```
+**Playback**: User tap → Context → Service → Check local file → Play local OR stream CDN → Monitor events → playNext() on finish
 
----
+## Key Context APIs
 
-## File Count Summary
+**AudioContext**: currentTrack, isPlaying, position, duration, playbackMode, playTrack(), togglePlayPause(), seekTo(), playNext(), playPrevious()
 
-| Category            | Files |
-| ------------------- | ----- |
-| **Screens**         | 6     |
-| **Components**      | 7     |
-| **Contexts**        | 4     |
-| **Services**        | 6     |
-| **Constants**       | 2     |
-| **Locales**         | 2     |
-| **Backend Scripts** | 2     |
-| **Documentation**   | 11    |
+**DownloadContext**: downloads[], activeDownloads Map, downloadSurah(), deleteDownload(), cancelDownload(), isDownloaded(), getProgress(), storageUsed
 
-**Total TypeScript/TSX:** ~30 files  
-**Total LOC (src/):** ~3,000 lines
+**NetworkContext**: isConnected, isInternetReachable, isOffline (= !connected OR !reachable)
 
----
+## Navigation Flow
 
-## Key Files
+index.tsx (Reciter Grid) → reciter/[id].tsx (Surah List) → MiniPlayer (bottom bar) → player.tsx (Full Screen)
 
-| File               | Lines | Purpose                |
-| ------------------ | ----- | ---------------------- |
-| audioService.ts    | 1151  | Playback + queue logic |
-| AudioContext.tsx   | 516   | Audio state management |
-| downloadService.ts | 382   | Download queue system  |
-| dataSync.ts        | 257   | CDN synchronization    |
-| database.ts        | 194   | SQLite operations      |
-| player.tsx         | ~900  | Full-screen player UI  |
-| reciter/[id].tsx   | ~650  | Surah list + downloads |
+## Tech Stack
 
----
+**Core**: Expo SDK 54, React Native 0.81.5, TypeScript 5.9, expo-router
+**Audio**: expo-audio, expo-media-control, react-native-background-timer
+**Storage**: expo-sqlite, expo-file-system, @react-native-async-storage/async-storage
+**UI**: react-native-reanimated 4.1.1, expo-linear-gradient, expo-image
+**CDN**: Cloudflare R2, Wrangler CLI
 
-## Runtime Files (Not in Repo)
+## Architecture Decisions
 
-```
-# Device storage:
-{DEVICE}/rabi. db                  # SQLite database
-{DOCUMENT}/audio/{reciter}/{surah}.mp3  # Downloaded MP3s
-
-# Build output:
-app/node_modules/                 # Dependencies
-app/.expo/                        # Expo cache
-app/dist/                         # Build artifacts
-```
+**Why Singleton?** Single audio instance, shared queue state
+**Why SQLite + FileSystem?** Fast queries (metadata) + native playback (MP3 blobs)
+**Why Context API?** Built-in, sufficient complexity, easy testing
+**Why Cloudflare R2?** S3-compatible, free egress, custom domain, affordable

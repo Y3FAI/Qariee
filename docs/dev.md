@@ -1,4 +1,4 @@
-# Qariee (Rabi) - Big Picture
+# Qariee - Big Picture
 
 > Modern Quran listening app with offline-first architecture.
 
@@ -15,13 +15,13 @@
 ┌──────────┐  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
 │  AUDIO   │  │ DOWNLOAD │ │ NETWORK  │ │  SLEEP   │ │ DATABASE │
 │ SERVICE  │  │ SERVICE  │ │ MONITOR  │ │  TIMER   │ │ SERVICE  │
-└────┬─────┘  └��───┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
+└────┬─────┘  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
      │             │            │            │            │
      └─────────────┴────────────┴────────────┴────────────┘
                                ▼
                     ┌──────────────────────┐
                     │  STORAGE LAYER       │
-                    │  • SQLite (rabi.db)  │
+                    │  • SQLite (qariee.db)  │
                     │  • File System (MP3) │
                     │  • AsyncStorage      │
                     └──────────────────────┘
@@ -29,14 +29,13 @@
                     ┌──────────────────────┐
                     │  REMOTE SOURCES      │
                     │  • Cloudflare R2 CDN │
-                    │  • rabi.y3f.me       │
                     └──────────────────────┘
 ```
 
 ## Data Flow
 
 ```
-CDN (rabi.y3f.me) ──▶ SYNC ──▶ SQLite ──▶ UI
+CDN ──▶ SYNC ──▶ SQLite ──▶ UI
                                   │
 USER ──▶ SCREEN ──▶ CONTEXT ──▶ SERVICE ──▶ expo-audio ──▶ PLAYBACK
                                   │
@@ -46,14 +45,14 @@ USER ──▶ SCREEN ──▶ CONTEXT ──▶ SERVICE ──▶ expo-audio �
 
 ## Services Summary
 
-| Service             | Purpose                               | File                         |
-| ------------------- | ------------------------------------- | ---------------------------- |
-| **audioService**    | Playback, queue, media controls       | audioService.ts (1151 LOC)   |
-| **downloadService** | Download management, local storage    | downloadService.ts (382 LOC) |
-| **database**        | SQLite operations                     | database.ts (194 LOC)        |
-| **dataSync**        | CDN sync, first launch initialization | dataSync.ts (257 LOC)        |
-| **audioStorage**    | Session persistence with AsyncStorage | audioStorage.ts              |
-| **i18n**            | Internationalization (Arabic/English) | i18n.ts                      |
+| Service             | Purpose                                 | File                         |
+| ------------------- | --------------------------------------- | ---------------------------- |
+| **audioService**    | Playback, queue, media controls         | audioService.ts (1151 LOC)   |
+| **downloadService** | Download management, local storage      | downloadService.ts (382 LOC) |
+| **database**        | SQLite operations                       | database.ts (194 LOC)        |
+| **dataSync**        | CDN sync, first launch initialization   | dataSync.ts (257 LOC)        |
+| **audioStorage**    | Session persistence with AsyncStorage   | audioStorage.ts              |
+| **i18n**            | Internationalization (Aqarieec/English) | i18n.ts                      |
 
 ## Core Principles
 
@@ -61,7 +60,7 @@ USER ──▶ SCREEN ──▶ CONTEXT ──▶ SERVICE ──▶ expo-audio �
 -   **Hybrid Storage**: SQLite for metadata, File System for audio files
 -   **Background Sync**: Silent CDN updates on network recovery
 -   **Native Media**: Lock screen controls via expo-media-control
--   **Bilingual**: Full Arabic/English support with RTL layouts
+-   **Bilingual**: Full Aqarieec/English support with RTL layouts
 
 ---
 
@@ -261,7 +260,7 @@ SQLite database for metadata persistence.
 
 ```typescript
 // From database.ts
-const db = SQLite.openDatabaseSync("rabi.db")
+const db = SQLite.openDatabaseSync("database.db")
 ```
 
 ### Key Operations:
@@ -332,7 +331,6 @@ Handles first launch initialization and background updates.
 
 ```typescript
 // From config.ts
-let CDN_BASE_URL = "https://rabi.y3f.me"
 
 export const getAppDatabaseUrl = (): string => {
     return `${CDN_BASE_URL}/metadata/db.json`
@@ -510,7 +508,7 @@ File-based routing with expo-router.
 │   src/                                             │
 │   ├── components/            # 7 reusable UI       │
 │   │   ├── MiniPlayer.tsx     # Bottom bar player   │
-│   │   ├── SurahName.tsx      # Arabic calligraphy  │
+│   │   ├── SurahName.tsx      # Aqarieec calligraphy  │
 │   │   ├── CircularProgress.tsx                     │
 │   │   ├── SleepTimerModal.tsx                      │
 │   │   ├── UpdateBanner.tsx                         │
@@ -588,8 +586,8 @@ Bash scripts for Cloudflare R2 CDN management.
 ### sync-to-r2.sh
 
 ```bash
-# Uploads local r2/ files to Cloudflare R2 bucket 'rabi'
-wrangler r2 object put "rabi/${remote_path}" --file="${local_file}"
+# Uploads local r2/ files to Cloudflare R2 bucket 'qariee'
+wrangler r2 object put "qariee/${remote_path}" --file="${local_file}"
 ```
 
 ### download-audio-to-r2.sh
@@ -638,7 +636,6 @@ wrangler r2 object put "rabi/${remote_path}" --file="${local_file}"
 │   INFRASTRUCTURE:                                  │
 │   • Cloudflare R2 (CDN storage)                   │
 │   • Wrangler CLI (R2 management)                  │
-│   • Custom domain:  rabi.y3f.me                    │
 │                                                     │
 └─────────────────────────────────────────────────────┘
 ```
@@ -708,9 +705,8 @@ export const downloadService = new DownloadService()
 
 ---
 
-_App Name: Qariee (Rabi)_  
+_App Name: Qariee (qariee)_  
 _Version: 1.0.0_  
-_Database: rabi.db (SQLite)_  
-_CDN: rabi.y3f.me (Cloudflare R2)_  
+_Database: database.db (SQLite)_  
 _Tech: React Native/Expo + TypeScript_  
 _Author: Y3F_
