@@ -4,7 +4,7 @@
         "slug": "qariee",
         "version": "1.0.0",
         "orientation": "portrait",
-        "icon": "../assets/icon.png",
+        "icon": "./assets/images/icon.png",
         "scheme": "qariee",
         "userInterfaceStyle": "automatic",
         "newArchEnabled": true,
@@ -18,7 +18,7 @@
         "android": {
             "adaptiveIcon": {
                 "backgroundColor": "#f0fff0",
-                "foregroundImage": "../assets/icon.png"
+                "foregroundImage": "./assets/images/icon.png"
             },
             "edgeToEdgeEnabled": true,
             "predictiveBackGestureEnabled": false,
@@ -30,11 +30,11 @@
         },
         "web": {
             "output": "static",
-            "favicon": "../assets/icon.png"
+            "favicon": "./assets/images/icon.png"
         },
 
         "notification": {
-            "icon": "../assets/notification_icon.png",
+            "icon": "./assets/images/icon.png",
             "color": "#000000"
         },
         "plugins": [
@@ -42,7 +42,7 @@
             [
                 "expo-splash-screen",
                 {
-                    "image": "../assets/splash.png",
+                    "image": "./assets/images/icon.png",
                     "resizeMode": "cover",
                     "backgroundColor": "#f0fff0",
                     "dark": {
@@ -56,7 +56,7 @@
             [
                 "expo-media-control",
                 {
-                    "notificationIcon": "../assets/notification_icon.png",
+                    "notificationIcon": "./assets/images/icon.png",
                     "enableBackgroundAudio": true,
                     "audioSessionCategory": "playback",
                     "skipInterval": 15,
