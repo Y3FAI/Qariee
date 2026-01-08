@@ -8,6 +8,7 @@ from .commands.add_reciter import add_reciter_cmd
 from .commands.sync import sync
 from .commands.list import list_cmd
 from .commands.generate_db import generate_db
+from .commands.verify import verify
 
 console = Console()
 
@@ -33,6 +34,7 @@ app.command(name="add-reciter")(add_reciter_cmd)
 app.command(name="sync")(sync)
 app.command(name="list")(list_cmd)
 app.command(name="generate-db")(generate_db)
+app.command(name="verify")(verify)
 
 
 @app.callback()

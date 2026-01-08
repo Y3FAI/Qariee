@@ -295,6 +295,7 @@ export default function ReciterDetailScreen() {
                 <Text
                     style={[
                         styles.surahName,
+                        rtl && styles.surahNameRTL,
                         { fontFamily: getFontFamily(arabic, "regular") },
                         isDisabled && styles.surahNameDisabled,
                     ]}
@@ -721,6 +722,9 @@ const styles = StyleSheet.create({
         color: "#efefd5",
         flex: 1,
         marginEnd: 12,
+        textAlign: "left",
+    },
+    surahNameRTL: {
         textAlign: "right",
     },
     surahItemDisabled: {

@@ -708,7 +708,7 @@ export default function PlayerScreen() {
                         onPress={togglePlayPause}
                         activeOpacity={0.8}
                     >
-                        <View style={!isPlaying && styles.playIconOffset}>
+                        <View style={!isPlaying && (rtl ? styles.playIconOffset : styles.playIconOffsetLTR)}>
                             <Ionicons
                                 name={isPlaying ? "pause" : "play"}
                                 size={PLAY_PAUSE_ICON_SIZE}
@@ -859,6 +859,9 @@ const styles = StyleSheet.create({
     },
     playIconOffset: {
         marginRight: 6,
+    },
+    playIconOffsetLTR: {
+        marginLeft: 6,
     },
     playIconFlip: {
         transform: [{ scaleX: -1 }],

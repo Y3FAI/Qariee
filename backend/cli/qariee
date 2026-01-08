@@ -1,0 +1,16 @@
+#!/bin/bash
+# Qariee CLI wrapper - run from anywhere in the project
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Check if qariee is installed in the virtual environment
+if [ -f "$DIR/venv/bin/qariee" ]; then
+    "$DIR/venv/bin/qariee" "$@"
+elif command -v qariee &> /dev/null; then
+    # Use system-installed qariee
+    qariee "$@"
+else
+    echo "Error: qariee CLI not installed."
+    echo "Run: cd backend/cli && pip install -e ."
+    exit 1
+fi

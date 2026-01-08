@@ -1,0 +1,4 @@
+#!/bin/bash
+# Qariee CLI wrapper - run from project root
+
+exec "$(dirname "$0")/backend/cli/qariee" "$@"
