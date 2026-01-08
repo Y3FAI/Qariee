@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, BackHandler, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,10 +6,20 @@ import { useTranslation } from 'react-i18next';
 import { isArabic } from '../src/services/i18n';
 import { getFontFamily } from '../src/utils/fonts';
 import Constants from 'expo-constants';
+import { useEffect } from 'react';
 
 export default function About() {
   const { t } = useTranslation();
   const arabic = isArabic();
+  const isRTL = arabic || I18nManager.isRTL;
+
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.replace('/');
+      return true;
+    });
+    return () => backHandler.remove();
+  }, []);
 
   const handleEmailContact = () => {
     Linking.openURL('mailto:yousef.contact.apps@gmail.com');
@@ -35,94 +45,85 @@ export default function About() {
         </Text>
       </View>
 
-      {/* Content */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* App Name & Version */}
         <View style={styles.appInfo}>
           <Text style={[styles.appName, { fontFamily: getFontFamily(arabic, 'bold') }]}>
             {t('app_name')}
           </Text>
-          <Text style={[styles.infoText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-            {t('version')}: {Constants.expoConfig?.version || '1.0.0'}
+          <Text style={[styles.versionText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
+            {t('version')} {Constants.expoConfig?.version || '1.0.0'}
           </Text>
         </View>
 
         {/* Description */}
-        <View style={styles.section}>
-          <Text style={[styles.description, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-            {t('about_description')}
-          </Text>
-        </View>
+        <Text style={[styles.description, { fontFamily: getFontFamily(arabic, 'regular') }]}>
+          {t('about_description')}
+        </Text>
 
-        {/* Features */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { fontFamily: getFontFamily(arabic, 'semibold') }]}>
-            {t('features')}
-          </Text>
-          <View style={styles.featuresList}>
-            <View style={styles.featureItem}>
-              <Ionicons name="radio" size={18} color="#1DB954" />
-              <Text style={[styles.featureText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-                {t('feature_streaming')}
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="download" size={18} color="#1DB954" />
-              <Text style={[styles.featureText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-                {t('feature_offline')}
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="time" size={18} color="#1DB954" />
-              <Text style={[styles.featureText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-                {t('feature_timer')}
-              </Text>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name="phone-portrait" size={18} color="#1DB954" />
-              <Text style={[styles.featureText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-                {t('feature_interface')}
-              </Text>
-            </View>
+        {/* Free Badge */}
+        <View style={styles.freeBadgeContainer}>
+          <View style={styles.freeBadge}>
+            <Text style={[styles.freeBadgeText, { fontFamily: getFontFamily(arabic, 'semibold') }]}>
+              {t('free_forever')}
+            </Text>
           </View>
         </View>
 
-        {/* Sources */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { fontFamily: getFontFamily(arabic, 'semibold') }]}>
-            {t('sources_title')}
+        {/* Features */}
+        <View style={styles.card}>
+          <Text style={[
+            styles.cardTitle,
+            { fontFamily: getFontFamily(arabic, 'semibold'), textAlign: isRTL ? 'right' : 'left' }
+          ]}>
+            {t('features')}
           </Text>
-          <Text style={[styles.bodyText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-            {t('sources_description')}
+          <View style={styles.featuresList}>
+            <FeatureItem text={t('feature_streaming')} arabic={arabic} isRTL={isRTL} />
+            <FeatureItem text={t('feature_offline')} arabic={arabic} isRTL={isRTL} />
+            <FeatureItem text={t('feature_reciters')} arabic={arabic} isRTL={isRTL} />
+            <FeatureItem text={t('feature_sleep_timer')} arabic={arabic} isRTL={isRTL} />
+          </View>
+        </View>
+
+        {/* Audio Source */}
+        <View style={styles.card}>
+          <Text style={[
+            styles.cardTitle,
+            { fontFamily: getFontFamily(arabic, 'semibold'), textAlign: isRTL ? 'right' : 'left' }
+          ]}>
+            {t('audio_source')}
           </Text>
-          <Text style={[styles.bodyText, { fontFamily: getFontFamily(arabic, 'regular'), marginTop: 8 }]}>
-            {t('sources_thanks')}
+          <Text style={[
+            styles.cardText,
+            { fontFamily: getFontFamily(arabic, 'regular'), textAlign: isRTL ? 'right' : 'left' }
+          ]}>
+            {t('audio_source_text')}
           </Text>
         </View>
 
-        {/* Developer */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { fontFamily: getFontFamily(arabic, 'semibold') }]}>
-            {t('developer')}
-          </Text>
-          <Text style={[styles.bodyText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-            {t('developer_name')}
+        {/* Contact */}
+        <View style={styles.card}>
+          <Text style={[styles.contactLabel, { fontFamily: getFontFamily(arabic, 'regular'), textAlign: isRTL ? 'right' : 'left' }]}>
+            {t('contact_text')}
           </Text>
           <TouchableOpacity
-            style={styles.contactButton}
             onPress={handleEmailContact}
             activeOpacity={0.7}
           >
-            <Ionicons name="mail" size={20} color="#1DB954" />
-            <Text style={[styles.contactText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
-              {t('contact')}
+            <Text style={[styles.emailText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
+              yousef.contact.apps@gmail.com
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Thank you */}
-        <View style={styles.thankYouSection}>
-          <Text style={[styles.thankYouText, { fontFamily: getFontFamily(arabic, 'medium') }]}>
+        {/* Thank You */}
+        <View style={styles.footer}>
+          <Text style={[styles.footerText, { fontFamily: getFontFamily(arabic, 'medium') }]}>
             {t('thank_you')}
           </Text>
         </View>
@@ -131,60 +132,106 @@ export default function About() {
   );
 }
 
+function FeatureItem({ text, arabic, isRTL }: { text: string; arabic: boolean; isRTL: boolean }) {
+  return (
+    <View style={[styles.featureItem, isRTL && styles.featureItemRTL]}>
+      <View style={styles.bullet} />
+      <Text style={[
+        styles.featureText,
+        { fontFamily: getFontFamily(arabic, 'regular'), textAlign: isRTL ? 'right' : 'left' }
+      ]}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d0d0d',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(239, 239, 213, 0.1)',
+    borderBottomColor: 'rgba(239, 239, 213, 0.08)',
   },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     color: '#efefd5',
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+    paddingTop: 24,
   },
   appInfo: {
-    paddingVertical: 30,
     alignItems: 'center',
+    marginBottom: 24,
   },
   appName: {
     fontSize: 28,
     color: '#efefd5',
-    marginBottom: 8,
+    letterSpacing: 1,
   },
-  infoText: {
-    fontSize: 14,
-    color: 'rgba(239, 239, 213, 0.6)',
+  versionText: {
+    fontSize: 13,
+    color: 'rgba(239, 239, 213, 0.5)',
+    marginTop: 4,
   },
-  section: {
+  description: {
+    fontSize: 15,
+    color: 'rgba(239, 239, 213, 0.8)',
+    lineHeight: 26,
     marginBottom: 24,
+    textAlign: 'center',
   },
-  sectionTitle: {
-    fontSize: 18,
+  freeBadgeContainer: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  freeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  freeBadgeText: {
+    fontSize: 14,
+    color: '#4ade80',
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 15,
     color: '#efefd5',
     marginBottom: 12,
   },
-  description: {
-    fontSize: 16,
-    color: 'rgba(239, 239, 213, 0.8)',
-    lineHeight: 24,
+  cardText: {
+    fontSize: 14,
+    color: 'rgba(239, 239, 213, 0.7)',
+    lineHeight: 22,
   },
   featuresList: {
     gap: 10,
@@ -194,32 +241,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  featureText: {
-    fontSize: 15,
-    color: 'rgba(239, 239, 213, 0.8)',
+  featureItemRTL: {
+    flexDirection: 'row-reverse',
   },
-  bodyText: {
-    fontSize: 15,
-    color: 'rgba(239, 239, 213, 0.8)',
+  bullet: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(239, 239, 213, 0.4)',
+  },
+  featureText: {
+    fontSize: 14,
+    color: 'rgba(239, 239, 213, 0.7)',
+    flex: 1,
     lineHeight: 22,
   },
-  contactButton: {
-    flexDirection: 'row',
+  contactLabel: {
+    fontSize: 14,
+    color: 'rgba(239, 239, 213, 0.7)',
+    lineHeight: 22,
+    marginBottom: 8,
+  },
+  emailText: {
+    fontSize: 14,
+    color: 'rgba(239, 239, 213, 0.7)',
+    textAlign: 'center',
+  },
+  footer: {
+    paddingVertical: 24,
     alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingVertical: 8,
   },
-  contactText: {
-    fontSize: 15,
-    color: '#1DB954',
-  },
-  thankYouSection: {
-    paddingVertical: 30,
-    alignItems: 'center',
-  },
-  thankYouText: {
-    fontSize: 16,
-    color: '#efefd5',
+  footerText: {
+    fontSize: 14,
+    color: 'rgba(239, 239, 213, 0.5)',
   },
 });

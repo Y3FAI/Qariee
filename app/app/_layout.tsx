@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react"
-import { Drawer } from "expo-router/drawer"
+import { Stack } from "expo-router"
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
@@ -7,7 +7,6 @@ import { AudioProvider } from "../src/contexts/AudioContext"
 import { DownloadProvider } from "../src/contexts/DownloadContext"
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext"
 import { SleepTimerProvider } from "../src/contexts/SleepTimerContext"
-import CustomDrawer from "../src/components/CustomDrawer"
 import "../src/services/i18n" // Initialize i18n
 
 // Keep the splash screen visible while we fetch resources
@@ -51,53 +50,17 @@ function AppContent() {
             <AudioProvider>
                 <SleepTimerProvider>
                     <DownloadProvider>
-                        <Drawer
-                            drawerContent={(props) => <CustomDrawer {...props} />}
+                        <Stack
                             screenOptions={{
                                 headerShown: false,
-                                drawerPosition: "left",
-                                drawerStyle: {
-                                    backgroundColor: "#121212",
-                                    width: 280,
-                                },
-                                drawerType: "front",
-                                swipeEnabled: true,
-                                overlayColor: "rgba(0, 0, 0, 0.5)",
                             }}
                         >
-                            <Drawer.Screen
-                                name="index"
-                                options={{
-                                    drawerItemStyle: { display: "none" },
-                                }}
-                            />
-                            <Drawer.Screen
-                                name="player"
-                                options={{
-                                    drawerItemStyle: { display: "none" },
-                                    swipeEnabled: false,
-                                }}
-                            />
-                            <Drawer.Screen
-                                name="reciter/[id]"
-                                options={{
-                                    drawerItemStyle: { display: "none" },
-                                    swipeEnabled: false,
-                                }}
-                            />
-                            <Drawer.Screen
-                                name="settings"
-                                options={{
-                                    drawerItemStyle: { display: "none" },
-                                }}
-                            />
-                            <Drawer.Screen
-                                name="about"
-                                options={{
-                                    drawerItemStyle: { display: "none" },
-                                }}
-                            />
-                        </Drawer>
+                            <Stack.Screen name="index" />
+                            <Stack.Screen name="player" />
+                            <Stack.Screen name="reciter/[id]" />
+                            <Stack.Screen name="settings" />
+                            <Stack.Screen name="about" />
+                        </Stack>
                     </DownloadProvider>
                 </SleepTimerProvider>
             </AudioProvider>

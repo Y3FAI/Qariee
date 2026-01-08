@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
   FlatList,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Dimensions,
@@ -11,10 +11,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
-import { useRouter, useNavigation } from 'expo-router';
-import { DrawerActions } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getAllReciters } from '../src/services/database';
 import { getReciterPhotoUrl } from '../src/constants/config';
@@ -27,13 +27,13 @@ import { getFontFamily } from '../src/utils/fonts';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
-// Pre-defined subtle dark gradients - beautiful, noticeable tints
+// Pre-defined dark gradients - beautiful, noticeable tints
 const SUBTLE_GRADIENTS = [
-  ['#2a2a40', '#242430', '#1e1e28', '#121212'], // Blue tint
-  ['#2a2a2a', '#242424', '#1e1e1e', '#121212'], // Pure dark tint
-  ['#402a2a', '#302424', '#281e1e', '#121212'], // Red tint
-  ['#2a402a', '#243024', '#1e281e', '#121212'], // Green tint
-  ['#302a40', '#282430', '#241e28', '#121212'], // Purple tint
+  ['#3a3a55', '#303045', '#262635', '#121212'], // Blue tint
+  ['#3a3a3a', '#303030', '#262626', '#121212'], // Pure dark tint
+  ['#553a3a', '#453030', '#352626', '#121212'], // Red tint
+  ['#3a553a', '#304530', '#263526', '#121212'], // Green tint
+  ['#453a55', '#383045', '#2e2635', '#121212'], // Purple tint
 ];
 
 /**
@@ -46,49 +46,46 @@ const pickRandomGradient = (): readonly [string, string, string, string] => {
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
-  const navigation = useNavigation();
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [loading, setLoading] = useState(true);
   const arabic = isArabic();
   const backPressedOnce = useRef(false);
   const [gradientColors] = useState(() => pickRandomGradient());
 
-  const openDrawer = () => {
-    navigation.dispatch(DrawerActions.openDrawer());
-  };
-
   useEffect(() => {
     loadReciters();
   }, []);
 
   // Handle Android hardware back button with double-tap to exit
-  useEffect(() => {
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (backPressedOnce.current) {
-        // Second press - exit app
-        BackHandler.exitApp();
-        return true;
-      }
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (backPressedOnce.current) {
+          // Second press - exit app
+          BackHandler.exitApp();
+          return true;
+        }
 
-      // First press - show alert and set flag
-      backPressedOnce.current = true;
-      Alert.alert(
-        t('exit_app'),
-        t('press_back_again_to_exit'),
-        [{ text: t('ok'), onPress: () => {} }],
-        { cancelable: true }
-      );
+        // First press - show alert and set flag
+        backPressedOnce.current = true;
+        Alert.alert(
+          t('exit_app'),
+          t('press_back_again_to_exit'),
+          [{ text: t('ok'), onPress: () => {} }],
+          { cancelable: true }
+        );
 
-      // Reset flag after 2 seconds
-      setTimeout(() => {
-        backPressedOnce.current = false;
-      }, 2000);
+        // Reset flag after 2 seconds
+        setTimeout(() => {
+          backPressedOnce.current = false;
+        }, 2000);
 
-      return true; // Prevent default back behavior
-    });
+        return true; // Prevent default back behavior
+      });
 
-    return () => backHandler.remove();
-  }, [t]);
+      return () => backHandler.remove();
+    }, [t])
+  );
 
   const loadReciters = async () => {
     try {
@@ -116,8 +113,10 @@ export default function HomeScreen() {
         <Image
           source={{ uri: getReciterPhotoUrl(item.id) }}
           style={styles.reciterImage}
-          defaultSource={require('../assets/images/icon.png')}
-          resizeMode="cover"
+          placeholder={require('../assets/images/placeholder.png')}
+          placeholderContentFit="cover"
+          contentFit="cover"
+          transition={200}
         />
         <View style={styles.cardInfo}>
           <Text
@@ -155,18 +154,6 @@ export default function HomeScreen() {
     >
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <OfflineIndicator />
-        <View style={[styles.header, { direction: 'ltr' }]}>
-          <TouchableOpacity
-            style={styles.menuButton}
-            onPress={openDrawer}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="menu" size={28} color="#efefd5" />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { fontFamily: getFontFamily(arabic, 'bold'), textAlign: arabic ? 'right' : 'left', flex: 1 }]}>
-            {t('reciters')}
-          </Text>
-        </View>
         <FlatList
           data={reciters}
           renderItem={renderReciterCard}
@@ -174,6 +161,31 @@ export default function HomeScreen() {
           numColumns={2}
           contentContainerStyle={styles.listContent}
           columnWrapperStyle={styles.columnWrapper}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => router.push('/settings')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="settings-outline" size={24} color="#efefd5" />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { fontFamily: getFontFamily(arabic, 'bold') }]}>
+                {t('reciters')}
+              </Text>
+            </View>
+          }
+          ListFooterComponent={
+            <TouchableOpacity
+              style={styles.footerLink}
+              onPress={() => router.push('/about')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.footerText, { fontFamily: getFontFamily(arabic, 'medium') }]}>
+                {t('about')}
+              </Text>
+            </TouchableOpacity>
+          }
         />
         <MiniPlayer />
       </SafeAreaView>
@@ -197,16 +209,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
+    marginHorizontal: -16,
+    paddingTop: 16,
   },
-  menuButton: {
+  iconButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   headerTitle: {
     fontSize: 32,
@@ -214,7 +227,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 80,
+    paddingBottom: 0,
   },
   columnWrapper: {
     justifyContent: 'space-between',
@@ -246,5 +259,14 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#B3B3B3',
     fontSize: 16,
+  },
+  footerLink: {
+    paddingTop: 24,
+    paddingBottom: 100,
+    alignItems: 'center',
+  },
+  footerText: {
+    fontSize: 14,
+    color: 'rgba(239, 239, 213, 0.5)',
   },
 });

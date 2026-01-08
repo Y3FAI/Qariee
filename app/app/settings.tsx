@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { isArabic, isRTL, changeLanguage, getCurrentLanguage } from '../src/services/i18n';
 import { getFontFamily } from '../src/utils/fonts';
 
@@ -12,6 +12,16 @@ export default function Settings() {
   const arabic = isArabic();
   const rtl = isRTL();
   const [currentLang, setCurrentLang] = useState<'ar' | 'en'>(getCurrentLanguage());
+
+  // Handle Android hardware back button - go to home
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      router.replace('/');
+      return true; // Prevent default behavior
+    });
+
+    return () => backHandler.remove();
+  }, []);
 
   const handleLanguageChange = async (lang: 'ar' | 'en') => {
     if (lang === currentLang) return;
@@ -22,7 +32,7 @@ export default function Settings() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={[styles.header, rtl && styles.headerRTL]}>
+      <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.replace('/')}
@@ -99,21 +109,18 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(239, 239, 213, 0.1)',
   },
-  headerRTL: {
-    flexDirection: 'row-reverse',
-  },
   backButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   title: {
     fontSize: 24,

@@ -1,5 +1,6 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
@@ -106,8 +107,9 @@ export default function MiniPlayer() {
                             uri: getReciterPhotoUrl(currentTrack.reciterId),
                         }}
                         style={styles.artwork}
-                        defaultSource={require("../../assets/images/icon.png")}
-                        resizeMode="cover"
+                        placeholder={require("../../assets/images/placeholder.png")}
+                        placeholderContentFit="cover"
+                        contentFit="cover"
                     />
                     <View style={styles.info}>
                         <Text style={styles.surahName} numberOfLines={1}>

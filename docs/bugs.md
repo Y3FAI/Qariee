@@ -1,12 +1,7 @@
 # User Reported Bugs and Issues
 
 ```
-Fix spash screen
-
-Add image caching
+Slow full player opening when clicking from reciter at a new surah not smooth and fast
 
 Shuffle doesn't Shuffle far from current
-
-Improve the logo with dark
-List item
 ```

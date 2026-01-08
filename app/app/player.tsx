@@ -1,7 +1,6 @@
 import {
     View,
     Text,
-    Image,
     TouchableOpacity,
     StyleSheet,
     Dimensions,
@@ -10,6 +9,7 @@ import {
 } from "react-native"
 import { useState, useEffect, useRef } from "react"
 import { SafeAreaView } from "react-native-safe-area-context"
+import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
@@ -527,7 +527,10 @@ export default function PlayerScreen() {
                                 uri: getReciterPhotoUrl(currentTrack.reciterId),
                             }}
                             style={styles.artwork}
-                            resizeMode="cover"
+                            placeholder={require('../assets/images/placeholder.png')}
+                            placeholderContentFit="cover"
+                            contentFit="cover"
+                            transition={200}
                         />
                     </View>
 

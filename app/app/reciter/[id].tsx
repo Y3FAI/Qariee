@@ -428,9 +428,10 @@ export default function ReciterDetailScreen() {
                     <Image
                         source={{ uri: getReciterPhotoUrl(reciter.id) }}
                         style={styles.reciterPhoto}
-                        resizeMode="cover"
-                        cachePolicy="memory"
-                        priority="high"
+                        placeholder={require("../../assets/images/placeholder.png")}
+                        placeholderContentFit="cover"
+                        contentFit="cover"
+                        transition={200}
                     />
                     <Text
                         style={[
