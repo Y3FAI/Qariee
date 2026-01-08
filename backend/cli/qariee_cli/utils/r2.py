@@ -33,7 +33,7 @@ def upload_to_r2(local_path: Path, remote_path: str) -> bool:
 
     try:
         result = subprocess.run(
-            ["wrangler", "r2", "object", "put", f"{BUCKET_NAME}/{remote_path}", "--file", str(local_path)],
+            ["wrangler", "r2", "object", "put", f"{BUCKET_NAME}/{remote_path}", "--file", str(local_path), "--remote"],
             capture_output=True,
             text=True,
         )

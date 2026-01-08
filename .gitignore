@@ -3,6 +3,7 @@
 # dependencies
 node_modules/
 app/.wrangler
+backend/cli/.wrangler
 
 **.keystore
 *.keystore

@@ -251,14 +251,15 @@ export const upsertReciters = async (reciters: Reciter[]): Promise<void> => {
   await database.withTransactionAsync(async () => {
     for (const reciter of reciters) {
       await database.runAsync(
-        `INSERT INTO reciters (id, name_en, name_ar, color_primary, color_secondary)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO reciters (id, name_en, name_ar, color_primary, color_secondary, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            name_en = excluded.name_en,
            name_ar = excluded.name_ar,
            color_primary = excluded.color_primary,
-           color_secondary = excluded.color_secondary`,
-        [reciter.id, reciter.name_en, reciter.name_ar, reciter.color_primary, reciter.color_secondary]
+           color_secondary = excluded.color_secondary,
+           sort_order = excluded.sort_order`,
+        [reciter.id, reciter.name_en, reciter.name_ar, reciter.color_primary, reciter.color_secondary, reciter.sort_order]
       );
     }
   });
@@ -306,7 +307,8 @@ export const initDatabase = async (): Promise<void> => {
         name_en TEXT NOT NULL,
         name_ar TEXT NOT NULL,
         color_primary TEXT NOT NULL,
-        color_secondary TEXT NOT NULL
+        color_secondary TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0
       );
     `);
 
@@ -353,14 +355,14 @@ export const initDatabase = async (): Promise<void> => {
 export const insertReciter = async (reciter: Reciter): Promise<void> => {
   const database = getDb();
   await database.runAsync(
-    'INSERT OR REPLACE INTO reciters (id, name_en, name_ar, color_primary, color_secondary) VALUES (?, ?, ?, ?, ?)',
-    [reciter.id, reciter.name_en, reciter.name_ar, reciter.color_primary, reciter.color_secondary]
+    'INSERT OR REPLACE INTO reciters (id, name_en, name_ar, color_primary, color_secondary, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
+    [reciter.id, reciter.name_en, reciter.name_ar, reciter.color_primary, reciter.color_secondary, reciter.sort_order]
   );
 };
 
 export const getAllReciters = async (): Promise<Reciter[]> => {
   const database = getDb();
-  const result = await database.getAllAsync<Reciter>('SELECT * FROM reciters ORDER BY id');
+  const result = await database.getAllAsync<Reciter>('SELECT * FROM reciters ORDER BY sort_order');
   return result;
 };
 

@@ -61,7 +61,8 @@ function main() {
       name_en TEXT NOT NULL,
       name_ar TEXT NOT NULL,
       color_primary TEXT NOT NULL,
-      color_secondary TEXT NOT NULL
+      color_secondary TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS surahs (
@@ -87,8 +88,8 @@ function main() {
   // Insert reciters
   console.log('👤 Inserting reciters...');
   const insertReciter = db.prepare(`
-    INSERT INTO reciters (id, name_en, name_ar, color_primary, color_secondary)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO reciters (id, name_en, name_ar, color_primary, color_secondary, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
 
   const insertReciters = db.transaction((reciters) => {
@@ -98,7 +99,8 @@ function main() {
         reciter.name_en,
         reciter.name_ar,
         reciter.color_primary,
-        reciter.color_secondary
+        reciter.color_secondary,
+        reciter.sort_order ?? 0
       );
     }
   });

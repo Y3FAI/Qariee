@@ -201,10 +201,70 @@ backend/
 │   │   └── reciters/            # Reciter photos
 │   └── metadata/
 │       └── db.json              # App database
-└── scripts/
-    ├── sync-to-r2.sh            # Upload metadata/images
-    └── download-audio-to-r2.sh  # Upload audio files
+├── scripts/
+│   ├── sync-to-r2.sh            # Upload metadata/images
+│   └── download-audio-to-r2.sh  # Upload audio files
+└── cli/                          # Python CLI for CDN management
+    ├── qariee_cli/
+    │   ├── commands/            # CLI commands (list, sync, add-reciter, upload-audio, generate-db)
+    │   └── utils/               # R2 upload, db.json handling
+    └── pyproject.toml           # CLI package config
 ```
+
+---
+
+# Backend CLI
+
+Python CLI tool for managing CDN content (reciters, audio files, metadata).
+
+## Installation
+
+```bash
+cd backend/cli
+pip install -e .
+```
+
+Requires [wrangler CLI](https://developers.cloudflare.com/r2/data-access/wrangler/) for R2 uploads:
+```bash
+npm install -g wrangler
+wrangler login
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `qariee list` | List all reciters in db.json |
+| `qariee add-reciter` | Add a new reciter (auto-generates colors) |
+| `qariee upload-audio <id> <url>` | Download & upload 114 MP3s to R2 |
+| `qariee sync` | Sync local r2/ to Cloudflare R2 |
+| `qariee generate-db` | Regenerate app's bundled SQLite |
+
+## Examples
+
+```bash
+# Add a new reciter
+qariee add-reciter saad-alghamdi \
+  --name-en "Saad Al-Ghamdi" \
+  --name-ar "سعد الغامدي" \
+  --image ./saad.jpg
+
+# Upload all 114 surahs
+qariee upload-audio saad-alghamdi https://server8.mp3quran.net/s_gmd
+
+# Sync metadata and images to CDN
+qariee sync
+
+# Dry run sync to preview
+qariee sync --dry-run
+```
+
+## Workflow: Adding a New Reciter
+
+1. `qariee add-reciter` - Add metadata + image to db.json
+2. `qariee upload-audio` - Download & upload 114 MP3s
+3. `qariee sync` - Push to Cloudflare R2
+4. `qariee generate-db` - Update bundled SQLite for next app release
 
 # Development Quick Reference
 

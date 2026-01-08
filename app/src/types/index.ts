@@ -4,6 +4,7 @@ export interface Reciter {
   name_ar: string;
   color_primary: string;
   color_secondary: string;
+  sort_order: number;
 }
 
 export interface Surah {
