@@ -8,16 +8,16 @@ Its goal is to provide a fast, reliable, and user-friendly experience for Quran 
 
 ## Key Files
 
-| File               | Lines | Purpose                 |
-| ------------------ | ----- | ----------------------- |
-| audioService.ts    | 1151  | Playback engine + queue |
-| AudioContext.tsx   | 516   | Audio state management  |
-| downloadService.ts | 382   | Download queue system   |
-| dataSync.ts        | 257   | CDN synchronization     |
-| database.ts        | 194   | SQLite operations       |
-| player.tsx         | ~900  | Full-screen player UI   |
-| reciter/[id].tsx   | ~650  | Surah list screen       |
-| surahName.ts       | 114   | Ligature mappings       |
+| File               | Lines | Purpose                          |
+| ------------------ | ----- | -------------------------------- |
+| audioService.ts    | 1151  | Playback engine + queue          |
+| AudioContext.tsx   | 516   | Audio state management           |
+| database.ts        | 494   | SQLite operations + migrations   |
+| downloadService.ts | 382   | Download queue system            |
+| syncService.ts     | 233   | CDN sync (debounced, UPSERT)     |
+| player.tsx         | ~900  | Full-screen player UI            |
+| reciter/[id].tsx   | ~650  | Surah list screen                |
+| surahName.ts       | 114   | Ligature mappings                |
 
 > Complete directory tree
 
@@ -138,10 +138,10 @@ app/src/contexts/
 app/src/services/
 ├── audioService.ts               # Playback engine (1151 lines)
 ├── audioStorage.ts               # Session persistence
-├── database.ts                   # SQLite operations (database.db)
-├── dataSync.ts                   # CDN synchronization
+├── database.ts                   # SQLite operations + migrations (494 lines)
 ├── downloadService.ts            # Download manager
-└── i18n.ts                       # i18next config
+├── i18n.ts                       # i18next config
+└── syncService.ts                # CDN sync - debounced, UPSERT (233 lines)
 ```
 
 ---
@@ -179,14 +179,14 @@ app/src/utils/
 ```
 app/assets/
 ├── data/
-│   ├── reciters.json            # Fallback reciter data
+│   ├── database.db              # Pre-populated SQLite (9 reciters, 114 surahs)
 │   └── surahs.json              # All 114 surahs
 ├── fonts/
 │   └── surah_names.ttf          # Arabic calligraphy font
 └── images/
     ├── icon.png
     ├── splash-icon.png
-    ├── android-icon-*. png
+    ├── android-icon-*.png
     └── favicon.png
 ```
 
@@ -252,8 +252,24 @@ getAudioUrl(reciterId, surahNumber) // /audio/{reciterId}/{surahNumber:003}.mp3
 
 ## Data Flow
 
-**First Launch**: Fetch db.json (or fallback bundled) → Insert reciters → Insert 114 surahs → Set 'first_launch_complete'
-**Subsequent**: Load SQLite immediately → Background sync (fire & forget)
+**Database as Source of Truth**: App ships with pre-populated SQLite database (database.db). CDN is for updates only via UPSERT pattern.
+
+**App Initialization** (`_layout.tsx`):
+```
+ensureSQLiteDirectoryExists() → copyBundledDatabaseIfNeeded() → runMigrations() → healthCheck() → requestSync()
+```
+
+- `ensureSQLiteDirectoryExists()`: Creates SQLite directory on Android
+- `copyBundledDatabaseIfNeeded()`: First install only - copies bundled database.db
+- `runMigrations()`: Applies pending schema migrations (version-tracked)
+- `healthCheck()`: Verifies tables exist and have data
+- `requestSync()`: Triggers background sync (debounced, non-blocking)
+
+**Sync Service** (`syncService.ts`):
+- Debounced (50ms) to handle network flapping
+- Mutex prevents concurrent syncs
+- UPSERT pattern: `INSERT ... ON CONFLICT DO UPDATE` (never delete-all)
+- Two versions: `schema_version` (DB structure), `data_version` (CDN freshness)
 
 **Playback**: User tap → Context → Service → Check local file → Play local OR stream CDN → Monitor events → playNext() on finish
 
@@ -277,9 +293,43 @@ index.tsx (Reciter Grid) → reciter/[id].tsx (Surah List) → MiniPlayer (botto
 **UI**: react-native-reanimated 4.1.1, expo-linear-gradient, expo-image
 **CDN**: Cloudflare R2, Wrangler CLI
 
+## Testing
+
+**Test Commands**:
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # With coverage report
+```
+
+**Test Structure**:
+```
+app/
+├── __mocks__/                    # Jest mocks
+│   ├── expo-sqlite.ts
+│   ├── expo-file-system.ts
+│   ├── expo-asset.ts
+│   └── async-storage.ts
+└── src/services/__tests__/
+    ├── test-utils.ts             # Factories & helpers
+    ├── database.test.ts          # 28 tests
+    └── syncService.test.ts       # 17 tests
+```
+
+**Coverage Thresholds** (jest.config.js):
+- `database.ts`: 70% statements, branches, functions; 65% lines
+- `syncService.ts`: 70% all metrics
+
+**Database Generation**:
+```bash
+npm run generate-db   # Regenerate bundled database.db from backend/r2/metadata/db.json
+```
+
 ## Architecture Decisions
 
 **Why Singleton?** Single audio instance, shared queue state
 **Why SQLite + FileSystem?** Fast queries (metadata) + native playback (MP3 blobs)
 **Why Context API?** Built-in, sufficient complexity, easy testing
 **Why Cloudflare R2?** S3-compatible, free egress, custom domain, affordable
+**Why Bundled Database?** Works offline from first launch, no network dependency
+**Why UPSERT?** Safe concurrent updates, no race conditions, atomic transactions

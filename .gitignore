@@ -45,3 +45,17 @@ app-example
 # generated native folders
 app/ios
 app/android
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+build/
+dist/
+
+# Test coverage
+app/coverage/
+coverage/
+*.lcov
+*.clover.xml

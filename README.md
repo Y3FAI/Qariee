@@ -67,13 +67,83 @@ app/
 │   ├── services/          # Business logic
 │   │   ├── audioService.ts        # Audio playback engine
 │   │   ├── downloadService.ts     # Download management
-│   │   ├── database.ts            # SQLite operations
-│   │   └── dataSync.ts            # Remote data sync
+│   │   ├── database.ts            # SQLite operations + migrations
+│   │   └── syncService.ts         # CDN sync (debounced, UPSERT)
 │   ├── constants/         # App configuration
 │   ├── locales/           # i18n translations
 │   └── utils/             # Helper functions
 └── assets/                # Images, fonts, icons
 ```
+
+## Testing
+
+```bash
+npm test              # Run all tests
+npm run test:watch    # Watch mode
+npm run test:coverage # With coverage report
+```
+
+## Scripts
+
+```bash
+npm run generate-db   # Regenerate bundled database from backend/r2/metadata/db.json
+npm run prebuild      # Clean Expo prebuild
+npm run dev           # Build and install debug APK
+npm run prod          # Build and install release APK
+```
+
+## Backend CLI
+
+A Python CLI tool for managing CDN content (reciters, audio files, metadata).
+
+### Installation
+
+```bash
+cd backend/cli
+pip install -e .
+```
+
+Requires [wrangler CLI](https://developers.cloudflare.com/r2/data-access/wrangler/) for R2 uploads:
+```bash
+npm install -g wrangler
+wrangler login
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `qariee list` | List all reciters in db.json |
+| `qariee add-reciter` | Add a new reciter (auto-generates colors) |
+| `qariee upload-audio <id> <url>` | Download & upload 114 MP3s to R2 |
+| `qariee sync` | Sync local r2/ to Cloudflare R2 |
+| `qariee generate-db` | Regenerate app's bundled SQLite |
+
+### Examples
+
+```bash
+# Add a new reciter
+qariee add-reciter saad-alghamdi \
+  --name-en "Saad Al-Ghamdi" \
+  --name-ar "سعد الغامدي" \
+  --image ./saad.jpg
+
+# Upload all 114 surahs
+qariee upload-audio saad-alghamdi https://server8.mp3quran.net/s_gmd
+
+# Sync metadata and images to CDN
+qariee sync
+
+# Regenerate app database
+qariee generate-db
+```
+
+### Workflow: Adding a New Reciter
+
+1. `qariee add-reciter` - Add metadata + image to db.json
+2. `qariee upload-audio` - Download & upload 114 MP3s
+3. `qariee sync` - Push to Cloudflare R2
+4. `qariee generate-db` - Update bundled SQLite for next app release
 
 ## Author
 

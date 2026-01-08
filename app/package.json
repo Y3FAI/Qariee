@@ -13,7 +13,8 @@
         "lint": "expo lint",
         "test": "jest",
         "test:watch": "jest --watch",
-        "test:coverage": "jest --coverage"
+        "test:coverage": "jest --coverage",
+        "generate-db": "node scripts/generate-db.js"
     },
     "dependencies": {
         "@expo-google-fonts/inter": "^0.4.2",
@@ -67,6 +68,7 @@
     },
     "devDependencies": {
         "@types/react": "~19.1.0",
+        "better-sqlite3": "^12.5.0",
         "eslint": "^9.25.0",
         "eslint-config-expo": "~10.0.0",
         "typescript": "~5.9.2"

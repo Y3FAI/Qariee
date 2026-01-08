@@ -12,10 +12,16 @@ import "../src/services/i18n" // Initialize i18n
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync()
+
+// New simplified data initialization
 import {
-    initializeApp,
-    triggerBackgroundUpdate,
-} from "../src/services/dataSync"
+    copyBundledDatabaseIfNeeded,
+    ensureSQLiteDirectoryExists,
+    runMigrations,
+    healthCheck,
+    initDatabase,
+} from "../src/services/database"
+import { requestSync } from "../src/services/syncService"
 import {
     useFonts,
     Tajawal_400Regular,
@@ -31,11 +37,11 @@ function AppContent() {
     const { isOffline } = useNetwork()
     const wasOfflineRef = useRef(isOffline)
 
-    // Detect when network comes online and trigger update
+    // Detect when network comes online and trigger sync
     useEffect(() => {
         if (wasOfflineRef.current && !isOffline) {
-            // Network just became available
-            triggerBackgroundUpdate()
+            // Network just became available - request sync (debounced)
+            requestSync()
         }
         wasOfflineRef.current = isOffline
     }, [isOffline])
@@ -115,13 +121,35 @@ export default function RootLayout() {
     useEffect(() => {
         async function prepare() {
             try {
-                await initializeApp()
+                // Step 1: Ensure SQLite directory exists (Android)
+                await ensureSQLiteDirectoryExists()
 
-                // Data loaded successfully
+                // Step 2: Copy bundled database on first install
+                const wasCopied = await copyBundledDatabaseIfNeeded()
+
+                if (wasCopied) {
+                    console.log("Bundled database copied successfully")
+                }
+
+                // Step 3: Run migrations (for existing users after updates)
+                await runMigrations()
+
+                // Step 4: Health check - verify database integrity
+                const health = await healthCheck()
+
+                if (!health.isHealthy) {
+                    // Database is corrupted or empty - reinitialize
+                    console.warn("Database health check failed, reinitializing:", health.errors)
+                    await initDatabase()
+                }
+
+                // Step 5: Trigger background sync (debounced, non-blocking)
+                requestSync()
+
                 setIsReady(true)
             } catch (error) {
                 console.error("App initialization error:", error)
-                // Continue anyway with possibly partial data
+                // Continue anyway - bundled database should have data
                 setIsReady(true)
             }
         }
