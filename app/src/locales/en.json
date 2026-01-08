@@ -11,8 +11,6 @@
   "downloaded": "Downloaded",
   "verses": "verses",
   "surah": "Surah",
-  "update_available": "A new version of Qariee is available! Please update to get the latest features and improvements.",
-  "update": "Update",
   "shuffle": "Shuffle",
   "download_all": "Download All",
   "remove_all": "Remove All",
@@ -49,5 +47,8 @@
   "developer": "Developer",
   "developer_name": "Yousef (Y3F)",
   "contact": "Contact",
-  "thank_you": "Thank you for using Qariee!"
+  "thank_you": "Thank you for using Qariee!",
+  "language": "Language",
+  "english": "English",
+  "arabic": "Arabic"
 }

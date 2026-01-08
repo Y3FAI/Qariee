@@ -1,11 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { I18nManager } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Localization from 'expo-localization';
 
 // Import translation files
 import en from '../locales/en.json';
 import ar from '../locales/ar.json';
+
+const LANGUAGE_STORAGE_KEY = '@qariee:language';
 
 const resources = {
   en: {
@@ -26,21 +28,49 @@ export const isArabic = (): boolean => {
   return i18n.language === 'ar';
 };
 
-// Detect device language
-const deviceLanguage = Localization.getLocales()[0]?.languageCode || 'en';
-const initialLanguage = deviceLanguage === 'ar' ? 'ar' : 'en';
+// Helper to get current language
+export const getCurrentLanguage = (): 'ar' | 'en' => {
+  return (i18n.language as 'ar' | 'en') || 'en';
+};
 
-i18n.use(initReactI18next).init({
-  resources,
-  lng: 'ar', // Arabic only - RTL focused app
-  fallbackLng: 'ar',
-  compatibilityJSON: 'v4', // For React Native
-  interpolation: {
-    escapeValue: false,
-  },
-});
+// Helper to change language and persist it
+export const changeLanguage = async (lang: 'ar' | 'en'): Promise<void> => {
+  await i18n.changeLanguage(lang);
+  await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+};
 
-// Don't force RTL globally - handle at component level for better control
-I18nManager.allowRTL(false);
+// Helper to get saved or detected language
+const getInitialLanguage = async (): Promise<'ar' | 'en'> => {
+  try {
+    const savedLang = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (savedLang === 'ar' || savedLang === 'en') {
+      return savedLang;
+    }
+  } catch (error) {
+    console.error('Error loading saved language:', error);
+  }
+
+  // Detect device language
+  const deviceLanguage = Localization.getLocales()[0]?.languageCode || 'en';
+  return deviceLanguage === 'ar' ? 'ar' : 'en';
+};
+
+// Initialize i18n with detected/saved language
+const initI18n = async () => {
+  const initialLanguage = await getInitialLanguage();
+
+  await i18n.use(initReactI18next).init({
+    resources,
+    lng: initialLanguage,
+    fallbackLng: 'en',
+    compatibilityJSON: 'v4', // For React Native
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+};
+
+// Start initialization (non-blocking)
+initI18n();
 
 export default i18n;

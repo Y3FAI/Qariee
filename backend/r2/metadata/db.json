@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.5",
     "settings": {
         "cdn_base_url": "https://qariee-storage.y3f.me",
         "app_name": "Qariee",
@@ -70,6 +70,41 @@
             "name_ar": "ماهر المعيقلي",
             "color_primary": "#4A90E2",
             "color_secondary": "#8CB4FF"
+        },
+        {
+            "id": "al-juhany",
+            "name_en": "Abdullah Al Juhany",
+            "name_ar": "عبد الله الجهني",
+            "color_primary": "#4A90E2",
+            "color_secondary": "#8CB4FF"
+        },
+        {
+            "id": "al-dawsari",
+            "name_en": "Yasir al-Dawsari",
+            "name_ar": "ياسر الدوسري",
+            "color_primary": "#4A90E2",
+            "color_secondary": "#8CB4FF"
+        },
+        {
+            "id": "al-shuraim",
+            "name_en": "Saud Al-Shuraim",
+            "name_ar": "سعود الشريم",
+            "color_primary": "#3498DB",
+            "color_secondary": "#7FB3D5"
+        },
+        {
+            "id": "al-turki",
+            "name_en": "Badr Al-Turki",
+            "name_ar": "بدر التركي",
+            "color_primary": "#4A90E2",
+            "color_secondary": "#8CB4FF"
+        },
+        {
+            "id": "ali-al-hudhayfi",
+            "name_en": "Ali al-Hudhayfi",
+            "name_ar": "علي الحذيفي",
+            "color_primary": "#E67E22",
+            "color_secondary": "#F5A962"
         }
     ]
 }
