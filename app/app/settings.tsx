@@ -78,30 +78,6 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 30,
   },
-  sectionTitle: {
-    fontSize: 16,
-    color: 'rgba(239, 239, 213, 0.7)',
-    marginBottom: 12,
-  },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1a1a1a',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  optionActive: {
-    borderColor: '#1DB954',
-  },
-  optionText: {
-    fontSize: 16,
-    color: '#efefd5',
-  },
   comingSoonText: {
     fontSize: 14,
     color: 'rgba(239, 239, 213, 0.5)',

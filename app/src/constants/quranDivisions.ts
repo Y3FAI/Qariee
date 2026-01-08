@@ -45,25 +45,7 @@ export const QURAN_DIVISIONS: QuranDivision[] = [
 ];
 
 /**
- * Helper function to get division for a specific surah number
- */
-export const getDivisionForSurah = (surahNumber: number): QuranDivision | null => {
-  return (
-    QURAN_DIVISIONS.find((division) =>
-      division.surahNumbers.includes(surahNumber)
-    ) || null
-  );
-};
-
-/**
  * Special case: Al-Fatihah (Surah 1) stands alone and is not part of any division
  * It should be displayed separately at the top
  */
 export const STANDALONE_SURAHS = [1]; // Al-Fatihah
-
-/**
- * Helper function to check if a surah is standalone
- */
-export const isStandaloneSurah = (surahNumber: number): boolean => {
-  return STANDALONE_SURAHS.includes(surahNumber);
-};

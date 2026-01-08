@@ -17,8 +17,6 @@ import { getFontFamily } from "../utils/fonts"
 interface SleepTimerModalProps {
     visible: boolean
     onClose: () => void
-    primaryColor?: string
-    secondaryColor?: string
 }
 
 const TIMER_OPTIONS = [5, 10, 15, 30, 45, 60]

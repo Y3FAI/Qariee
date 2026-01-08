@@ -742,8 +742,6 @@ export default function PlayerScreen() {
                 <SleepTimerModal
                     visible={sleepTimerModalVisible}
                     onClose={() => setSleepTimerModalVisible(false)}
-                    primaryColor={primaryColor}
-                    secondaryColor={secondaryColor}
                 />
             </SafeAreaView>
         </LinearGradient>

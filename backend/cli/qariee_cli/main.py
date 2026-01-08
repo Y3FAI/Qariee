@@ -20,9 +20,12 @@ app = typer.Typer(
 
 
 def upload_audio_cmd(reciter_id: str = typer.Argument(..., help="Reciter ID"),
-                      base_url: str = typer.Argument(..., help="Base URL for MP3 files")):
+                      base_url: str = typer.Argument(..., help="Base URL for MP3 files"),
+                      start: int = typer.Option(1, "--start", "-s", help="Start surah number (1-114)"),
+                      end: int = typer.Option(114, "--end", "-e", help="End surah number (1-114)"),
+                      dry_run: bool = typer.Option(False, "--dry-run", "-n", help="Preview without uploading")):
     """Download and upload audio files for a reciter."""
-    upload_audio(reciter_id, base_url)
+    upload_audio(reciter_id, base_url, start=start, end=end, dry_run=dry_run)
 
 
 app.command(name="upload-audio")(upload_audio_cmd)
