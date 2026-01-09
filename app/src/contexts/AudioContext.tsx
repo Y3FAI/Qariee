@@ -508,64 +508,52 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
 
     // ==========================================================================
-    // Session persistence
+    // Session persistence helper
     // ==========================================================================
+    const buildSessionData = useCallback((
+        track: CurrentTrack,
+        pos: number,
+        dur: number,
+    ): ListeningSession => ({
+        reciterId: track.reciterId,
+        reciterName: track.reciterName,
+        surahName: track.surahName,
+        surahNumber: track.surahNumber,
+        reciterColorPrimary: track.reciterColorPrimary,
+        reciterColorSecondary: track.reciterColorSecondary,
+        position: pos,
+        duration: dur,
+        timestamp: Date.now(),
+        playedTrackIds: Array.from(playedTrackIds),
+        shuffleHistory: shuffleHistory.map(t => ({
+            reciterId: t.reciterId,
+            surahNumber: t.surahNumber,
+        })),
+        playedTracksOrder: playedTracksOrder.map(t => ({
+            reciterId: t.reciterId,
+            surahNumber: t.surahNumber,
+        })),
+    }), [playedTrackIds, shuffleHistory, playedTracksOrder])
+
+    // Save session periodically while playing
     useEffect(() => {
         if (!currentTrack || !sessionLoadedRef.current || !isPlaying) return
 
         const saveInterval = setInterval(() => {
-            const currentPosition = audioService.getCurrentTime()
-            const currentDuration = audioService.getDuration()
-
-            audioStorage.saveListeningSession({
-                reciterId: currentTrack.reciterId,
-                reciterName: currentTrack.reciterName,
-                surahName: currentTrack.surahName,
-                surahNumber: currentTrack.surahNumber,
-                reciterColorPrimary: currentTrack.reciterColorPrimary,
-                reciterColorSecondary: currentTrack.reciterColorSecondary,
-                position: currentPosition,
-                duration: currentDuration,
-                timestamp: Date.now(),
-                playedTrackIds: Array.from(playedTrackIds),
-                shuffleHistory: shuffleHistory.map(t => ({
-                    reciterId: t.reciterId,
-                    surahNumber: t.surahNumber,
-                })),
-                playedTracksOrder: playedTracksOrder.map(t => ({
-                    reciterId: t.reciterId,
-                    surahNumber: t.surahNumber,
-                })),
-            })
+            audioStorage.saveListeningSession(
+                buildSessionData(currentTrack, audioService.getCurrentTime(), audioService.getDuration())
+            )
         }, 1000)
 
         return () => clearInterval(saveInterval)
-    }, [currentTrack, isPlaying, playedTrackIds, shuffleHistory, playedTracksOrder])
+    }, [currentTrack, isPlaying, buildSessionData])
 
+    // Save session on pause
     useEffect(() => {
         if (!isPlaying && currentTrack && duration > 0 && sessionLoadedRef.current) {
-            audioStorage.saveListeningSession({
-                reciterId: currentTrack.reciterId,
-                reciterName: currentTrack.reciterName,
-                surahName: currentTrack.surahName,
-                surahNumber: currentTrack.surahNumber,
-                reciterColorPrimary: currentTrack.reciterColorPrimary,
-                reciterColorSecondary: currentTrack.reciterColorSecondary,
-                position,
-                duration,
-                timestamp: Date.now(),
-                playedTrackIds: Array.from(playedTrackIds),
-                shuffleHistory: shuffleHistory.map(t => ({
-                    reciterId: t.reciterId,
-                    surahNumber: t.surahNumber,
-                })),
-                playedTracksOrder: playedTracksOrder.map(t => ({
-                    reciterId: t.reciterId,
-                    surahNumber: t.surahNumber,
-                })),
-            })
+            audioStorage.saveListeningSession(buildSessionData(currentTrack, position, duration))
         }
-    }, [isPlaying, currentTrack, duration, position, playedTrackIds, shuffleHistory, playedTracksOrder])
+    }, [isPlaying, currentTrack, duration, position, buildSessionData])
 
     // ==========================================================================
     // App state changes
@@ -574,35 +562,15 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
             if (nextAppState === "background" || nextAppState === "inactive") {
                 if (currentTrack && sessionLoadedRef.current) {
-                    const currentPosition = audioService.getCurrentTime()
-                    const currentDuration = audioService.getDuration()
-
-                    audioStorage.saveListeningSession({
-                        reciterId: currentTrack.reciterId,
-                        reciterName: currentTrack.reciterName,
-                        surahName: currentTrack.surahName,
-                        surahNumber: currentTrack.surahNumber,
-                        reciterColorPrimary: currentTrack.reciterColorPrimary,
-                        reciterColorSecondary: currentTrack.reciterColorSecondary,
-                        position: currentPosition,
-                        duration: currentDuration,
-                        timestamp: Date.now(),
-                        playedTrackIds: Array.from(playedTrackIds),
-                        shuffleHistory: shuffleHistory.map(t => ({
-                            reciterId: t.reciterId,
-                            surahNumber: t.surahNumber,
-                        })),
-                        playedTracksOrder: playedTracksOrder.map(t => ({
-                            reciterId: t.reciterId,
-                            surahNumber: t.surahNumber,
-                        })),
-                    })
+                    audioStorage.saveListeningSession(
+                        buildSessionData(currentTrack, audioService.getCurrentTime(), audioService.getDuration())
+                    )
                 }
             }
         })
 
         return () => subscription.remove()
-    }, [currentTrack, playedTrackIds, shuffleHistory, playedTracksOrder])
+    }, [currentTrack, buildSessionData])
 
     // ==========================================================================
     // Offline handling
