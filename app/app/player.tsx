@@ -607,7 +607,7 @@ export default function PlayerScreen() {
                         >
                             <View
                                 style={
-                                    rtl &&
+                                    !rtl &&
                                     playbackMode === "shuffle" &&
                                     styles.shuffleFlip
                                 }
@@ -616,8 +616,8 @@ export default function PlayerScreen() {
                                     name={
                                         playbackMode === "sequential"
                                             ? rtl
-                                                ? "play-back"
-                                                : "play-forward"
+                                                ? "play-forward"
+                                                : "play-back"
                                             : playbackMode === "shuffle"
                                             ? "shuffle"
                                             : "repeat"

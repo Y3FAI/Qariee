@@ -8,6 +8,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Asset } from 'expo-asset';
 import { Reciter, Surah, Download } from '../types';
 import MediaControl, { PlaybackState, Command } from 'expo-media-control';
+import BackgroundTimer from 'react-native-background-timer';
 
 // =============================================================================
 // Types
@@ -52,6 +53,8 @@ class AudioService {
         this.player = player
         this.startStatusListener()
         this.setupMediaControls()
+        // Enable BackgroundTimer for sleep timer when screen is off
+        BackgroundTimer.start()
     }
 
     private startStatusListener() {
@@ -220,8 +223,8 @@ class AudioService {
         this.sleepTimerEndTime = endTime
         this.sleepTimerCallback = callback
 
-        // Set timeout to execute callback when timer expires
-        setTimeout(() => {
+        // Use BackgroundTimer so it works when screen is off
+        BackgroundTimer.setTimeout(() => {
             if (this.sleepTimerCallback) {
                 this.sleepTimerCallback()
                 this.clearSleepTimer()

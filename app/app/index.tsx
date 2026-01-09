@@ -10,7 +10,6 @@ import {
   BackHandler,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -152,7 +151,7 @@ export default function HomeScreen() {
       locations={[0, 0.3, 0.7, 1]}
       style={styles.container}
     >
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.safeArea}>
         <OfflineIndicator />
         <FlatList
           data={reciters}
@@ -175,20 +174,9 @@ export default function HomeScreen() {
               </Text>
             </View>
           }
-          ListFooterComponent={
-            <TouchableOpacity
-              style={styles.footerLink}
-              onPress={() => router.push('/about')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.footerText, { fontFamily: getFontFamily(arabic, 'medium') }]}>
-                {t('about')}
-              </Text>
-            </TouchableOpacity>
-          }
         />
         <MiniPlayer />
-      </SafeAreaView>
+      </View>
     </LinearGradient>
   );
 }

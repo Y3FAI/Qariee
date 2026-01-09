@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { Stack } from "expo-router"
 import { View } from "react-native"
-import { SafeAreaProvider } from "react-native-safe-area-context"
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
 import { AudioProvider } from "../src/contexts/AudioContext"
 import { DownloadProvider } from "../src/contexts/DownloadContext"
@@ -39,17 +39,19 @@ function AppContent() {
             <AudioProvider>
                 <SleepTimerProvider>
                     <DownloadProvider>
-                        <Stack
-                            screenOptions={{
-                                headerShown: false,
-                            }}
-                        >
-                            <Stack.Screen name="index" />
-                            <Stack.Screen name="player" />
-                            <Stack.Screen name="reciter/[id]" />
-                            <Stack.Screen name="settings" />
-                            <Stack.Screen name="about" />
-                        </Stack>
+                        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+                            <Stack
+                                screenOptions={{
+                                    headerShown: false,
+                                }}
+                            >
+                                <Stack.Screen name="index" />
+                                <Stack.Screen name="player" options={{ unsafe: true }} />
+                                <Stack.Screen name="reciter/[id]" options={{ unsafe: true }} />
+                                <Stack.Screen name="settings" />
+                                <Stack.Screen name="about" />
+                            </Stack>
+                        </SafeAreaView>
                     </DownloadProvider>
                 </SleepTimerProvider>
             </AudioProvider>

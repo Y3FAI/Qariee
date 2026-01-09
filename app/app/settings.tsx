@@ -96,6 +96,22 @@ export default function Settings() {
             المزيد من الإعدادات قريباً...
           </Text>
         </View>
+
+        {/* About */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => router.push('/about')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.optionContent}>
+              <Text style={[styles.optionText, { fontFamily: getFontFamily(arabic, 'regular') }]}>
+                {t('about')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="rgba(239, 239, 213, 0.5)" />
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
