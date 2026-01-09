@@ -248,13 +248,4 @@ const styles = StyleSheet.create({
     color: '#B3B3B3',
     fontSize: 16,
   },
-  footerLink: {
-    paddingTop: 24,
-    paddingBottom: 100,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: 'rgba(239, 239, 213, 0.5)',
-  },
 });

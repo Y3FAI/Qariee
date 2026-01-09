@@ -7,6 +7,7 @@ import { useRouter } from "expo-router"
 import { getReciterPhotoUrl } from "../constants/config"
 import { useAudio } from "../contexts/AudioContext"
 import { isRTL } from "../services/i18n"
+import { hexToRgba } from "../utils/color"
 
 // ===========================
 // UI CONFIGURATION KNOBS
@@ -44,20 +45,6 @@ const MIN_BOTTOM_SAFE_AREA = 8 // Minimum padding for Android nav bar
 
 // ===========================
 
-/**
- * Convert hex color to rgba with opacity
- */
-const hexToRgba = (hex: string | null | undefined, alpha: number): string => {
-    if (!hex) return `rgba(40, 40, 40, ${alpha})`
-
-    const num = parseInt(hex.replace("#", ""), 16)
-    const r = (num >> 16) & 0xff
-    const g = (num >> 8) & 0xff
-    const b = num & 0xff
-
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
 export default function MiniPlayer() {
     const router = useRouter()
     const insets = useSafeAreaInsets()
@@ -85,8 +72,8 @@ export default function MiniPlayer() {
     return (
         <LinearGradient
             colors={[
-                hexToRgba(primaryColor, GRADIENT_OPACITY),
-                hexToRgba(primaryColor, GRADIENT_OPACITY * 0.7),
+                hexToRgba(primaryColor, GRADIENT_OPACITY, [40, 40, 40]),
+                hexToRgba(primaryColor, GRADIENT_OPACITY * 0.7, [40, 40, 40]),
             ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}

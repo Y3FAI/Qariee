@@ -25,6 +25,7 @@ import { Reciter, Surah } from "../../src/types"
 import { getAllSurahs, getReciterById } from "../../src/services/database"
 import { isRTL, isArabic } from "../../src/services/i18n"
 import { getFontFamily } from "../../src/utils/fonts"
+import { hexToRgba } from "../../src/utils/color"
 import { useAudio } from "../../src/contexts/AudioContext"
 import { useDownload } from "../../src/contexts/DownloadContext"
 import { useNetwork } from "../../src/contexts/NetworkContext"
@@ -36,20 +37,6 @@ const { height } = Dimensions.get("window")
 const PHOTO_SIZE = 200
 const isLargeScreen = height > 800
 const TOP_BUTTON_POSITION = isLargeScreen ? 50 : 40
-
-/**
- * Convert hex color to rgba with opacity
- */
-const hexToRgba = (hex: string | null | undefined, alpha: number): string => {
-    if (!hex) return `rgba(18, 18, 18, ${alpha})`
-
-    const num = parseInt(hex.replace("#", ""), 16)
-    const r = (num >> 16) & 0xff
-    const g = (num >> 8) & 0xff
-    const b = num & 0xff
-
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
 
 export default function ReciterDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()

@@ -22,10 +22,12 @@ import { useTranslation } from "react-i18next"
 import { getReciterPhotoUrl, getAudioUrl } from "../src/constants/config"
 import { isRTL, isArabic } from "../src/services/i18n"
 import { getFontFamily } from "../src/utils/fonts"
+import { hexToRgba } from "../src/utils/color"
+import { formatTime } from "../src/utils/time"
 import SurahName from "../src/components/SurahName"
 import CircularProgress from "../src/components/CircularProgress"
 import SleepTimerModal from "../src/components/SleepTimerModal"
-import { getSurahByNumber, getAllSurahs } from "../src/services/database"
+import { getAllSurahs } from "../src/services/database"
 import { Track } from "../src/services/audioService"
 
 const { width, height } = Dimensions.get("window")
@@ -172,36 +174,6 @@ const TIME_TEXT_OPACITY = 0.6
 
 // ===========================
 
-/**
- * Convert hex color to rgba with opacity
- */
-const hexToRgba = (hex: string | null | undefined, alpha: number): string => {
-    if (!hex) return `rgba(18, 18, 18, ${alpha})`
-
-    const num = parseInt(hex.replace("#", ""), 16)
-    const r = (num >> 16) & 0xff
-    const g = (num >> 8) & 0xff
-    const b = num & 0xff
-
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
-/**
- * Format seconds to HH:MM:SS or MM:SS
- */
-const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600)
-    const mins = Math.floor((seconds % 3600) / 60)
-    const secs = Math.floor(seconds % 60)
-
-    if (hours > 0) {
-        return `${hours}:${mins.toString().padStart(2, "0")}:${secs
-            .toString()
-            .padStart(2, "0")}`
-    }
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-}
-
 export default function PlayerScreen() {
     const router = useRouter()
     const { t } = useTranslation()
@@ -274,62 +246,34 @@ export default function PlayerScreen() {
     const displayPosition =
         isSliding || seekingToRef.current !== null ? slidingPosition : position
 
-    // Helper function to create a track from surah number
-    const createTrackFromSurah = async (
-        surahNumber: number,
-    ): Promise<Track | null> => {
-        if (!currentTrack) return null
-
-        // Validate surah number boundaries
-        if (surahNumber < 1 || surahNumber > 114) return null
-
-        // Get surah data from database
-        const surah = await getSurahByNumber(surahNumber)
-        if (!surah) return null
-
-        // Check if downloaded
-        const isDownloaded = checkDownloaded(
-            currentTrack.reciterId,
-            surahNumber,
-        )
-
-        // Create track with current reciter info
-        return {
-            reciterId: currentTrack.reciterId,
-            reciterName: currentTrack.reciterName,
-            reciterColorPrimary: currentTrack.reciterColorPrimary || "#282828",
-            reciterColorSecondary:
-                currentTrack.reciterColorSecondary || "#404040",
-            surahNumber: surah.number,
-            surahName: rtl ? surah.name_ar : surah.name_en,
-            audioUrl: getAudioUrl(currentTrack.reciterId, surah.number),
-            isDownloaded,
-        }
-    }
-
-    // Play next surah by number with debouncing
-    const handlePlayNextSurah = async () => {
+    // Unified handler for playing adjacent surah (next or previous)
+    const handlePlayAdjacentSurah = async (direction: "next" | "prev") => {
         if (!currentTrack || isProcessingTrackChange.current) return
 
-        const nextSurahNumber = currentTrack.surahNumber + 1
-        if (nextSurahNumber > 114) return
+        const targetSurahNumber =
+            direction === "next"
+                ? currentTrack.surahNumber + 1
+                : currentTrack.surahNumber - 1
+
+        // Boundary check
+        if (targetSurahNumber < 1 || targetSurahNumber > 114) return
 
         isProcessingTrackChange.current = true
 
         try {
             const allSurahs = await getAllSurahs()
-            const nextSurah = allSurahs.find(
-                (s) => s.number === nextSurahNumber,
+            const targetSurah = allSurahs.find(
+                (s) => s.number === targetSurahNumber,
             )
-            if (!nextSurah) return
+            if (!targetSurah) return
 
-            const isNextDownloaded = checkDownloaded(
+            const isTargetDownloaded = checkDownloaded(
                 currentTrack.reciterId,
-                nextSurah.number,
+                targetSurah.number,
             )
 
             // Check if offline and not downloaded
-            if (isOffline && !isNextDownloaded) {
+            if (isOffline && !isTargetDownloaded) {
                 Alert.alert(t("offline"), t("download_required_offline"))
                 return
             }
@@ -341,15 +285,15 @@ export default function PlayerScreen() {
                     currentTrack.reciterColorPrimary || "#282828",
                 reciterColorSecondary:
                     currentTrack.reciterColorSecondary || "#404040",
-                surahNumber: nextSurah.number,
-                surahName: rtl ? nextSurah.name_ar : nextSurah.name_en,
-                audioUrl: getAudioUrl(currentTrack.reciterId, nextSurah.number),
-                isDownloaded: isNextDownloaded,
+                surahNumber: targetSurah.number,
+                surahName: rtl ? targetSurah.name_ar : targetSurah.name_en,
+                audioUrl: getAudioUrl(currentTrack.reciterId, targetSurah.number),
+                isDownloaded: isTargetDownloaded,
             }
 
-            // Build queue efficiently
+            // Build queue (surahs after target)
             const queue: Track[] = allSurahs
-                .filter((s) => s.number > nextSurahNumber)
+                .filter((s) => s.number > targetSurahNumber)
                 .map((s) => ({
                     reciterId: currentTrack.reciterId,
                     reciterName: currentTrack.reciterName,
@@ -372,70 +316,8 @@ export default function PlayerScreen() {
         }
     }
 
-    // Play previous surah by number with debouncing
-    const handlePlayPreviousSurah = async () => {
-        if (!currentTrack || isProcessingTrackChange.current) return
-
-        const prevSurahNumber = currentTrack.surahNumber - 1
-        if (prevSurahNumber < 1) return
-
-        isProcessingTrackChange.current = true
-
-        try {
-            const allSurahs = await getAllSurahs()
-            const prevSurah = allSurahs.find(
-                (s) => s.number === prevSurahNumber,
-            )
-            if (!prevSurah) return
-
-            const isPrevDownloaded = checkDownloaded(
-                currentTrack.reciterId,
-                prevSurah.number,
-            )
-
-            // Check if offline and not downloaded
-            if (isOffline && !isPrevDownloaded) {
-                Alert.alert(t("offline"), t("download_required_offline"))
-                return
-            }
-
-            const track: Track = {
-                reciterId: currentTrack.reciterId,
-                reciterName: currentTrack.reciterName,
-                reciterColorPrimary:
-                    currentTrack.reciterColorPrimary || "#282828",
-                reciterColorSecondary:
-                    currentTrack.reciterColorSecondary || "#404040",
-                surahNumber: prevSurah.number,
-                surahName: rtl ? prevSurah.name_ar : prevSurah.name_en,
-                audioUrl: getAudioUrl(currentTrack.reciterId, prevSurah.number),
-                isDownloaded: isPrevDownloaded,
-            }
-
-            // Build queue efficiently
-            const queue: Track[] = allSurahs
-                .filter((s) => s.number > prevSurahNumber)
-                .map((s) => ({
-                    reciterId: currentTrack.reciterId,
-                    reciterName: currentTrack.reciterName,
-                    reciterColorPrimary:
-                        currentTrack.reciterColorPrimary || "#282828",
-                    reciterColorSecondary:
-                        currentTrack.reciterColorSecondary || "#404040",
-                    surahNumber: s.number,
-                    surahName: rtl ? s.name_ar : s.name_en,
-                    audioUrl: getAudioUrl(currentTrack.reciterId, s.number),
-                    isDownloaded: checkDownloaded(
-                        currentTrack.reciterId,
-                        s.number,
-                    ),
-                }))
-
-            await playTrack(track, queue)
-        } finally {
-            isProcessingTrackChange.current = false
-        }
-    }
+    const handlePlayNextSurah = () => handlePlayAdjacentSurah("next")
+    const handlePlayPreviousSurah = () => handlePlayAdjacentSurah("prev")
 
     if (!currentTrack) {
         return (

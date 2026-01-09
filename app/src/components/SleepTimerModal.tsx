@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next"
 import { useSleepTimer } from "../contexts/SleepTimerContext"
 import { isArabic } from "../services/i18n"
 import { getFontFamily } from "../utils/fonts"
+import { formatTime } from "../utils/time"
 
 interface SleepTimerModalProps {
     visible: boolean
@@ -20,19 +21,6 @@ interface SleepTimerModalProps {
 }
 
 const TIMER_OPTIONS = [5, 10, 15, 30, 45, 60]
-
-const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600)
-    const mins = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-
-    if (hours > 0) {
-        return `${hours}:${mins.toString().padStart(2, "0")}:${secs
-            .toString()
-            .padStart(2, "0")}`
-    }
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-}
 
 export default function SleepTimerModal({
     visible,
