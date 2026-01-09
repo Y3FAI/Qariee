@@ -55,7 +55,7 @@ export default function ReciterDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
     const { t } = useTranslation()
-    const { playTrack } = useAudio()
+    const { playTrack, playbackMode } = useAudio()
     const {
         downloadSurah,
         deleteDownload,
@@ -164,10 +164,10 @@ export default function ReciterDetailScreen() {
         // Use only downloaded surahs when offline
         const surahsToPlay = isOffline ? downloadedSurahs : filteredSurahs
 
-        // Shuffle the surahs
-        const shuffled = [...surahsToPlay].sort(() => Math.random() - 0.5)
-        const firstTrack = createTrack(shuffled[0])
-        const queue = shuffled.slice(1).map(createTrack)
+        // Pick first track and pass ALL others as queue
+        // The distance-weighted shuffle will be applied in AudioContext
+        const firstTrack = createTrack(surahsToPlay[0])
+        const queue = surahsToPlay.slice(1).map(createTrack)
 
         await playTrack(firstTrack, queue)
         router.push("/player")
@@ -208,11 +208,21 @@ export default function ReciterDetailScreen() {
     const handlePlaySurah = async (surah: Surah) => {
         if (!reciter) return
 
-        // Create queue: all surahs after the selected one
+        // Create queue based on playback mode
         const currentIndex = filteredSurahs.findIndex(
             (s) => s.number === surah.number,
         )
-        const queue = filteredSurahs.slice(currentIndex + 1).map(createTrack)
+
+        let queue: Track[] = []
+        if (playbackMode === "shuffle") {
+            // Shuffle mode: ALL other surahs are eligible (not just ones after)
+            queue = filteredSurahs
+                .filter((s) => s.number !== surah.number)
+                .map(createTrack)
+        } else {
+            // Sequential mode: surahs after the selected one
+            queue = filteredSurahs.slice(currentIndex + 1).map(createTrack)
+        }
 
         const track = createTrack(surah)
         await playTrack(track, queue)

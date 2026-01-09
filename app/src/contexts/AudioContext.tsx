@@ -280,10 +280,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setQueue(trackQueue)
         setOriginalQueue(trackQueue)
 
+        // Load the track into player but DON'T auto-play
+        // User must click play to resume - better UX
         const localPath = await downloadService.getLocalPath(track.reciterId, track.surahNumber)
         const audioSource = localPath || track.audioUrl
 
-        await audioService.play(audioSource)
+        // Just replace the source, don't play
+        player.replace(audioSource)
         if (savedSession.position > 0) {
             audioService.seekTo(savedSession.position)
         }
@@ -314,7 +317,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         }
 
         return shuffleArray(available)
-    }, [shuffleHistory] as [typeof shuffleHistory])
+    }, [shuffleHistory])
 
     // ==========================================================================
     // Actions
