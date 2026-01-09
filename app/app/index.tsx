@@ -40,7 +40,7 @@ const SUBTLE_GRADIENTS = [
  * Pick a random subtle gradient on app load
  */
 const pickRandomGradient = (): readonly [string, string, string, string] => {
-  return SUBTLE_GRADIENTS[Math.floor(Math.random() * SUBTLE_GRADIENTS.length)];
+  return SUBTLE_GRADIENTS[Math.floor(Math.random() * SUBTLE_GRADIENTS.length)] as unknown as readonly [string, string, string, string];
 };
 
 export default function HomeScreen() {
