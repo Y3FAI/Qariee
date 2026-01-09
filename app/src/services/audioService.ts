@@ -343,9 +343,13 @@ class AudioService {
             await this.updateMediaControlMetadata(track)
         } catch (error) {
             console.error("[AudioService] Error playing track:", error)
-            // If playback fails, clear the broken state
+            // If playback fails, clear the broken state (ignore if player was released)
             if (this.player) {
-                this.player.pause()
+                try {
+                    this.player.pause()
+                } catch {
+                    // Player might be released, ignore
+                }
                 this.stopPlaybackMonitor()
             }
             throw error
@@ -390,7 +394,7 @@ class AudioService {
      * Update media control position from native playback status
      */
     private async updateMediaControlPositionFromStatus(status: AudioStatus) {
-        if (!this.currentTrack) return
+        if (!this.currentTrack || !this.player) return
 
         // Throttle metadata updates to reduce console spam
         const now = Date.now()
@@ -434,6 +438,7 @@ class AudioService {
                 )
             }
         } catch (error) {
+            // Silently ignore media control errors - they're not critical
             console.error(
                 "Error updating media control position from status:",
                 error,
@@ -506,7 +511,12 @@ class AudioService {
                 position,
             )
         } catch (error) {
-            console.error("[AudioService] Error pausing:", error)
+            // Player might be released - ignore error
+            if (error instanceof Error && error.message.includes("released")) {
+                console.warn("[AudioService] Player was released, ignoring pause error")
+            } else {
+                console.error("[AudioService] Error pausing:", error)
+            }
         }
     }
 
@@ -701,15 +711,9 @@ class AudioService {
 
     /**
      * Play next track in queue (or repeat current if in repeat mode)
+     * Note: isProcessingNext flag is managed by caller (event handler)
      */
     async playNext() {
-        // Prevent duplicate calls
-        if (this.isProcessingNext) {
-            return
-        }
-        this.isProcessingNext = true
-        this.isProcessingNextSince = Date.now()
-
         try {
             // In repeat mode, replay current track from beginning
             if (this.playbackMode === "repeat" && this.currentTrack) {
