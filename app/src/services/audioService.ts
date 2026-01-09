@@ -70,26 +70,14 @@ class AudioService {
             return
         }
 
-        // Safety check: if isProcessingNext is stuck for too long (30 seconds), reset it
-        if (this.isProcessingNext && this.isProcessingNextSince > 0) {
-            const stuckForMs = Date.now() - this.isProcessingNextSince
-            if (stuckForMs > 30000) {
-                // 30 seconds timeout
-                console.warn(
-                    "[AudioService] 🚨 handlePlaybackStatusUpdate - isProcessingNext stuck for",
-                    stuckForMs,
-                    "ms, RESETTING",
-                )
-                this.isProcessingNext = false
-                this.isProcessingNextSince = 0
-            }
-        }
-
         // Update media controls with real-time position from native event
         this.updateMediaControlPositionFromStatus(status)
 
         // Check if track just finished using native didJustFinish flag
         if (status.didJustFinish && !this.isProcessingNext) {
+            // Set flag synchronously BEFORE async call to prevent race condition
+            this.isProcessingNext = true
+            this.isProcessingNextSince = Date.now()
             this.playNext()
         }
     }
@@ -260,89 +248,16 @@ class AudioService {
     }
 
     /**
-     * Load a track without auto-playing (for resuming at specific position)
-     */
-    async loadTrack(track: Track, queue: Track[] = []) {
-        if (!this.player) {
-            throw new Error("Audio player not initialized")
-        }
-
-        this.currentTrack = track
-
-        // Filter queue based on offline status
-        let filteredQueue = [...queue]
-        if (this.isOffline && queue.length > 0) {
-            const downloadedTracks = await Promise.all(
-                queue.map(async (t) => {
-                    const localPath = await downloadService.getLocalPath(
-                        t.reciterId,
-                        t.surahNumber,
-                    )
-                    return localPath ? t : null
-                }),
-            )
-            filteredQueue = downloadedTracks.filter(
-                (t): t is Track => t !== null,
-            )
-        }
-
-        this.originalQueue = [...filteredQueue] // Keep filtered original order
-        this.playedTrackIds.clear() // Clear played tracks (saved session, treat as new)
-        this.shuffleHistory = [] // Clear shuffle history for saved session
-        this.playedTrackIds.add(this.getTrackId(track)) // Mark current track as played
-        this.playedTracksOrder.push(track) // Add to played tracks order
-        if (this.playbackMode === "shuffle") {
-            this.addToShuffleHistory(track)
-        }
-
-        // Apply shuffle if in shuffle mode
-        if (this.playbackMode === "shuffle" && filteredQueue.length > 0) {
-            this.queue = this.shuffleWithHistory([...filteredQueue])
-        } else {
-            this.queue = [...filteredQueue]
-        }
-
-        try {
-            // Check if track is downloaded
-            const localPath = await downloadService.getLocalPath(
-                track.reciterId,
-                track.surahNumber,
-            )
-
-            if (this.isOffline && !localPath) {
-                throw new Error(
-                    "Cannot stream while offline. Please download the surah first.",
-                )
-            }
-
-            const audioSource = localPath || track.audioUrl
-
-            // Pause existing playback
-            if (this.player.playing) {
-                this.player.pause()
-            }
-
-            // Replace audio but don't play yet
-            this.player.replace(audioSource as AudioSource)
-
-            // Wait for audio to load
-            await new Promise((resolve) => setTimeout(resolve, 100))
-
-            await this.updateMediaControlMetadata(track)
-        } catch (error) {
-            console.error("[AudioService] Error loading track:", error)
-            throw error
-        }
-    }
-
-    /**
-     * Play a track
+     * Play a track (or load without playing if autoPlay=false)
      */
     async play(
         track: Track,
         queue: Track[] = [],
-        isNewSession: boolean = true,
+        options: { autoPlay?: boolean; isNewSession?: boolean } | boolean = true,
     ) {
+        // Support legacy boolean signature: play(track, queue, isNewSession)
+        const { autoPlay = true, isNewSession = true } =
+            typeof options === "boolean" ? { isNewSession: options } : options
         if (!this.player) {
             console.error("[AudioService] ❌ play() - Player not initialized")
             throw new Error("Audio player not initialized")
@@ -408,50 +323,24 @@ class AudioService {
                 this.player.pause()
             }
 
-            // Replace and play
+            // Replace audio
             this.player.replace(audioSource as AudioSource)
 
             // Small buffer to allow native player to process the replace
             await new Promise((resolve) => setTimeout(resolve, 100))
 
-            this.player.play()
-
-            // Verify playback started with INCREASED ROBUSTNESS
-            let playbackStarted = false
-
-            // Attempt for up to 3 seconds (30 * 100ms)
-            // This allows time for buffering without crashing the queue logic
-            for (let attempt = 0; attempt < 30; attempt++) {
-                if (this.player.playing) {
-                    playbackStarted = true
-                    break
+            if (autoPlay) {
+                // Lazily re-initialize media controls if needed (after stop())
+                if (!this.mediaControlsInitialized) {
+                    await this.initializeMediaControls()
+                    this.mediaControlsInitialized = true
                 }
-
-                // Wait 100ms between checks
-                await new Promise((resolve) => setTimeout(resolve, 100))
-            }
-
-            // Final attempt to kickstart if still not playing after 3 seconds
-            if (!playbackStarted) {
                 this.player.play()
-                // Give it one last 500ms grace period
-                await new Promise((resolve) => setTimeout(resolve, 500))
-                if (this.player.playing) {
-                    playbackStarted = true
-                }
-            }
-
-            if (!playbackStarted) {
-                console.error(
-                    "[AudioService] ❌ play() - Failed to start playback after extended wait",
-                )
-                throw new Error("Failed to start playback - timed out")
+                // Start monitoring playback for auto-advance
+                this.startPlaybackMonitor()
             }
 
             await this.updateMediaControlMetadata(track)
-
-            // Start monitoring playback for auto-advance
-            this.startPlaybackMonitor()
         } catch (error) {
             console.error("[AudioService] Error playing track:", error)
             // If playback fails, clear the broken state
@@ -1120,11 +1009,8 @@ class AudioService {
                 0,
             )
             await MediaControl.disableMediaControls()
-
-            // Re-enable immediately for next playback
-            if (this.mediaControlsInitialized) {
-                await this.initializeMediaControls()
-            }
+            // Mark as not initialized - will re-init lazily on next play()
+            this.mediaControlsInitialized = false
         } catch (error) {
             console.error("[AudioService] Error stopping:", error)
         }

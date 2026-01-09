@@ -215,7 +215,8 @@ export function AudioProvider({
                 }))
 
             // Load audio and seek to position (but don't play)
-            await audioService.loadTrack(track, queue)
+            // isNewSession: false to preserve restored history from loadSavedState
+            await audioService.play(track, queue, { autoPlay: false, isNewSession: false })
             if (savedSession.position > 0) {
                 await audioService.seekTo(savedSession.position)
             }
@@ -415,7 +416,10 @@ export function AudioProvider({
         }
 
         const saveInterval = setInterval(() => {
-            if (currentTrack && duration > 0) {
+            // Read position/duration from player to avoid stale closure
+            const currentPosition = audioService.getPlayer()?.currentTime ?? 0
+            const currentDuration = audioService.getPlayer()?.duration ?? 0
+            if (currentTrack && currentDuration > 0) {
                 audioStorage.saveListeningSession({
                     reciterId: currentTrack.reciterId,
                     reciterName: currentTrack.reciterName,
@@ -423,8 +427,8 @@ export function AudioProvider({
                     surahNumber: currentTrack.surahNumber,
                     reciterColorPrimary: currentTrack.reciterColorPrimary,
                     reciterColorSecondary: currentTrack.reciterColorSecondary,
-                    position,
-                    duration,
+                    position: currentPosition,
+                    duration: currentDuration,
                     timestamp: Date.now(),
                     playedTrackIds: Array.from(
                         audioService.getPlayedTrackIds(),
@@ -446,7 +450,7 @@ export function AudioProvider({
         }, 1000) // Save every 1 second while playing
 
         return () => clearInterval(saveInterval)
-    }, [currentTrack, position, duration, isPlaying])
+    }, [currentTrack, isPlaying]) // Removed position/duration - read from player inside
 
     // Save once when pausing
     useEffect(() => {
