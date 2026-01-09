@@ -99,6 +99,24 @@ export default function MiniPlayer() {
                     router.push("/player")
                 }}
             >
+                <TouchableOpacity
+                    onPress={(e) => {
+                        e.stopPropagation()
+                        togglePlayPause()
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={styles.playButton}
+                >
+                    <View style={!isPlaying && styles.playIconOffset}>
+                        <Ionicons
+                            name={isPlaying ? "pause" : "play"}
+                            size={PLAY_ICON_SIZE}
+                            color="#efefd5"
+                            style={rtl && styles.playIconFlip}
+                        />
+                    </View>
+                </TouchableOpacity>
+
                 <View
                     style={[styles.leftSection, rtl && styles.leftSectionRTL]}
                 >
@@ -120,24 +138,6 @@ export default function MiniPlayer() {
                         </Text>
                     </View>
                 </View>
-
-                <TouchableOpacity
-                    onPress={(e) => {
-                        e.stopPropagation()
-                        togglePlayPause()
-                    }}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    style={styles.playButton}
-                >
-                    <View style={!isPlaying && styles.playIconOffset}>
-                        <Ionicons
-                            name={isPlaying ? "pause" : "play"}
-                            size={PLAY_ICON_SIZE}
-                            color="#efefd5"
-                            style={rtl && styles.playIconFlip}
-                        />
-                    </View>
-                </TouchableOpacity>
             </TouchableOpacity>
 
             {/* Progress bar - RTL-aware using transform */}

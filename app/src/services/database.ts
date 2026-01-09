@@ -1,5 +1,7 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
+import { File } from 'expo-file-system';
+import { Paths } from 'expo-file-system';
 import { Asset } from 'expo-asset';
 import { Reciter, Surah, Download } from '../types';
 
@@ -23,6 +25,18 @@ const getDb = (): SQLite.SQLiteDatabase => {
     db = SQLite.openDatabaseSync(DATABASE_NAME);
   }
   return db;
+};
+
+/**
+ * Close the database connection. Call this when the app is terminating.
+ * In practice, React Native apps typically keep the DB open for the app's lifetime,
+ * but this function is provided for cleanup during app background/termination events.
+ */
+export const closeDatabase = async (): Promise<void> => {
+  if (db) {
+    await db.closeAsync();
+    db = null;
+  }
 };
 
 // =============================================================================
@@ -260,7 +274,17 @@ export const isDownloaded = async (
   surahNumber: number
 ): Promise<boolean> => {
   const download = await getDownload(reciterId, surahNumber);
-  return download !== null;
+  if (!download) {
+    return false;
+  }
+
+  // Also verify the file actually exists on disk
+  try {
+    const file = new File(Paths.document, download.local_file_path);
+    return file.exists;
+  } catch {
+    return false;
+  }
 };
 
 // =============================================================================

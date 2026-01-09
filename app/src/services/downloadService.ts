@@ -40,9 +40,35 @@ class DownloadService {
       if (!dir.exists) {
         await dir.create();
       }
+
+      // Clean up orphaned database records (files that don't exist)
+      // This handles partial downloads from app crashes
+      await this.cleanupOrphanedRecords();
     } catch (error) {
       console.error('Error initializing download service:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Remove database records for files that don't exist on disk
+   * This cleans up partial downloads from app crashes
+   */
+  private async cleanupOrphanedRecords(): Promise<void> {
+    try {
+      const allDownloads = await getAllDownloads();
+
+      for (const download of allDownloads) {
+        const file = new File(Paths.document, download.local_file_path);
+
+        // If file doesn't exist, remove the database record
+        if (!file.exists) {
+          console.log(`Cleaning up orphaned record: ${download.reciter_id}/${download.surah_number}`);
+          await dbDeleteDownload(download.reciter_id, download.surah_number);
+        }
+      }
+    } catch (error) {
+      console.error('Error cleaning up orphaned records:', error);
     }
   }
 
@@ -220,6 +246,16 @@ class DownloadService {
       }
     } catch (error) {
       console.error(`Error downloading surah ${task.surahNumber}:`, error);
+
+      // Clean up partial file
+      try {
+        const partialFile = new File(Paths.document, task.destinationPath);
+        if (partialFile.exists) {
+          await partialFile.delete();
+        }
+      } catch (cleanupError) {
+        console.error(`Failed to clean up partial file:`, cleanupError);
+      }
 
       // Notify failed
       this.notifyProgress(key, {

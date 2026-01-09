@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react"
 import { Stack } from "expo-router"
-import { View } from "react-native"
+import { View, Text } from "react-native"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
 import { AudioProvider } from "../src/contexts/AudioContext"
@@ -61,6 +61,7 @@ function AppContent() {
 
 export default function RootLayout() {
     const [isReady, setIsReady] = useState(false)
+    const [initError, setInitError] = useState<string | null>(null)
     const [fontsLoaded] = useFonts({
         Tajawal_400Regular,
         Tajawal_500Medium,
@@ -77,11 +78,11 @@ export default function RootLayout() {
             try {
                 // Initialize database (copies bundled DB on first install)
                 await initDatabase()
-
-                // Sync with CDN (non-blocking, fire and forget)
-                sync()
             } catch (error) {
                 console.error("Init failed:", error)
+                setInitError(error instanceof Error ? error.message : 'Unknown error')
+                setIsReady(true)
+                return
             }
             setIsReady(true)
         }
@@ -97,6 +98,17 @@ export default function RootLayout() {
 
     if (!isReady || !fontsLoaded) {
         return null
+    }
+
+    // Show error screen if initialization failed
+    if (initError) {
+        return (
+            <View style={{ flex: 1, backgroundColor: "#121212", justifyContent: "center", alignItems: "center", padding: 20 }}>
+                <Text style={{ color: "#efefd5", fontSize: 18, marginBottom: 10 }}>Initialization Error</Text>
+                <Text style={{ color: "#B3B3B3", fontSize: 14, textAlign: "center" }}>{initError}</Text>
+                <Text style={{ color: "#666", fontSize: 12, marginTop: 20 }}>Please restart the app</Text>
+            </View>
+        )
     }
 
     return (

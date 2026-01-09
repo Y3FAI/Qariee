@@ -285,8 +285,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         const localPath = await downloadService.getLocalPath(track.reciterId, track.surahNumber)
         const audioSource = localPath || track.audioUrl
 
-        // Just replace the source, don't play
+        // Replace source and wait for it to load
         player.replace(audioSource)
+        await new Promise(r => setTimeout(r, 100))
+
         if (savedSession.position > 0) {
             audioService.seekTo(savedSession.position)
         }
