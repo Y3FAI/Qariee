@@ -7,12 +7,6 @@ import { Reciter, Surah, Download } from '../types';
 // Constants
 // =============================================================================
 
-/**
- * Current schema version. Increment when making schema changes.
- * Migrations will be run for versions between local and current.
- */
-export const CURRENT_SCHEMA_VERSION = 1;
-
 const DATABASE_NAME = 'database.db';
 
 // =============================================================================
@@ -32,26 +26,18 @@ const getDb = (): SQLite.SQLiteDatabase => {
 };
 
 // =============================================================================
-// New Infrastructure Functions
+// Database Initialization
 // =============================================================================
 
 /**
  * Ensures the SQLite directory exists (required on Android)
- * Returns true if directory exists or was created successfully
  */
-export const ensureSQLiteDirectoryExists = async (): Promise<boolean> => {
-  try {
-    const sqliteDir = `${FileSystem.documentDirectory}SQLite`;
-    const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
+const ensureSQLiteDirectoryExists = async (): Promise<void> => {
+  const sqliteDir = `${FileSystem.documentDirectory}SQLite`;
+  const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
 
-    if (!dirInfo.exists) {
-      await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Error ensuring SQLite directory exists:', error);
-    return false;
+  if (!dirInfo.exists) {
+    await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
   }
 };
 
@@ -59,189 +45,64 @@ export const ensureSQLiteDirectoryExists = async (): Promise<boolean> => {
  * Copies the bundled database to the document directory on first install.
  * Returns true if database was copied, false if it already exists.
  */
-export const copyBundledDatabaseIfNeeded = async (): Promise<boolean> => {
-  try {
-    const dbPath = `${FileSystem.documentDirectory}SQLite/${DATABASE_NAME}`;
-    const fileInfo = await FileSystem.getInfoAsync(dbPath);
+const copyBundledDatabase = async (): Promise<boolean> => {
+  const dbPath = `${FileSystem.documentDirectory}SQLite/${DATABASE_NAME}`;
+  const fileInfo = await FileSystem.getInfoAsync(dbPath);
 
-    if (fileInfo.exists) {
-      return false; // Database already exists, skip copy
-    }
-
-    // Ensure directory exists
-    await ensureSQLiteDirectoryExists();
-
-    // Load bundled database asset
-    const asset = Asset.fromModule(require('../../assets/data/database.db'));
-    await asset.downloadAsync();
-
-    if (!asset.localUri) {
-      throw new Error('Failed to download bundled database asset');
-    }
-
-    // Copy to document directory
-    await FileSystem.copyAsync({
-      from: asset.localUri,
-      to: dbPath,
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Error copying bundled database:', error);
-    return false;
+  if (fileInfo.exists) {
+    return false; // Already exists
   }
+
+  // Load bundled database asset
+  const asset = Asset.fromModule(require('../../assets/data/database.db'));
+  await asset.downloadAsync();
+
+  if (!asset.localUri) {
+    throw new Error('Failed to load bundled database');
+  }
+
+  // Copy to document directory
+  await FileSystem.copyAsync({
+    from: asset.localUri,
+    to: dbPath,
+  });
+
+  return true;
 };
 
 /**
- * Health check result interface
+ * Initialize database - call once on app start
+ * Simple flow: ensure directory exists → copy bundled DB if needed
  */
-export interface HealthCheckResult {
-  isHealthy: boolean;
-  tablesExist: boolean;
-  hasReciters: boolean;
-  hasSurahs: boolean;
-  schemaVersion: number;
-  errors: string[];
-}
-
-/**
- * Performs a health check on the database
- * Verifies tables exist and contain required data
- */
-export const healthCheck = async (): Promise<HealthCheckResult> => {
-  const result: HealthCheckResult = {
-    isHealthy: false,
-    tablesExist: false,
-    hasReciters: false,
-    hasSurahs: false,
-    schemaVersion: 0,
-    errors: [],
-  };
-
-  try {
-    const database = getDb();
-
-    // Check if tables exist by trying to query them
-    try {
-      const reciters = await database.getAllAsync<Reciter>('SELECT * FROM reciters LIMIT 1');
-      result.hasReciters = reciters.length > 0;
-    } catch {
-      result.errors.push('reciters table missing or inaccessible');
-    }
-
-    try {
-      const surahs = await database.getAllAsync<Surah>('SELECT * FROM surahs LIMIT 1');
-      result.hasSurahs = surahs.length > 0;
-    } catch {
-      result.errors.push('surahs table missing or inaccessible');
-    }
-
-    // Tables exist if we didn't get errors
-    result.tablesExist = result.errors.length === 0;
-
-    // Get schema version
-    result.schemaVersion = await getSchemaVersion();
-
-    // Overall health
-    result.isHealthy = result.tablesExist && result.hasReciters && result.hasSurahs;
-  } catch (error) {
-    result.errors.push(`Health check failed: ${error}`);
-  }
-
-  return result;
+export const initDatabase = async (): Promise<void> => {
+  await ensureSQLiteDirectoryExists();
+  await copyBundledDatabase();
 };
 
 // =============================================================================
-// Schema Version Management
+// CDN Sync Version
 // =============================================================================
 
 /**
- * Gets the current schema version from the database
- * Returns 0 if no version is set
- */
-export const getSchemaVersion = async (): Promise<number> => {
-  try {
-    const result = await getMetadata('schema_version');
-    return result ? parseInt(result, 10) : 0;
-  } catch {
-    return 0;
-  }
-};
-
-/**
- * Sets the schema version in the database
- */
-export const setSchemaVersion = async (version: number): Promise<void> => {
-  await setMetadata('schema_version', String(version));
-};
-
-/**
- * Gets the data version (CDN sync version)
- * Returns null if no version is set
+ * Gets the data version (for CDN sync)
  */
 export const getDataVersion = async (): Promise<string | null> => {
   return getMetadata('data_version');
 };
 
 /**
- * Sets the data version (CDN sync version)
+ * Sets the data version (for CDN sync)
  */
 export const setDataVersion = async (version: string): Promise<void> => {
   await setMetadata('data_version', version);
 };
 
 // =============================================================================
-// Migrations
-// =============================================================================
-
-/**
- * Migration definitions
- * Key is the target version, value is array of SQL statements
- */
-const MIGRATIONS: Record<number, string[]> = {
-  // Version 1 is the initial schema (bundled database)
-  1: [],
-  // Future migrations go here:
-  // 2: ['ALTER TABLE reciters ADD COLUMN sort_order INTEGER DEFAULT 0'],
-};
-
-/**
- * Runs pending database migrations
- */
-export const runMigrations = async (): Promise<void> => {
-  const currentVersion = await getSchemaVersion();
-
-  if (currentVersion >= CURRENT_SCHEMA_VERSION) {
-    return; // No migrations needed
-  }
-
-  const database = getDb();
-
-  try {
-    // Run migrations for each version between current and target
-    for (let version = currentVersion + 1; version <= CURRENT_SCHEMA_VERSION; version++) {
-      const statements = MIGRATIONS[version] || [];
-
-      for (const sql of statements) {
-        await database.execAsync(sql);
-      }
-    }
-
-    // Update schema version
-    await setSchemaVersion(CURRENT_SCHEMA_VERSION);
-  } catch (error) {
-    console.error('Error running migrations:', error);
-    throw error;
-  }
-};
-
-// =============================================================================
-// Batch Upsert Functions (with transactions)
+// Upsert Functions (for CDN sync)
 // =============================================================================
 
 /**
  * Upserts multiple reciters in a single transaction
- * Uses INSERT ... ON CONFLICT for safe concurrent access
  */
 export const upsertReciters = async (reciters: Reciter[]): Promise<void> => {
   if (reciters.length === 0) return;
@@ -288,67 +149,6 @@ export const upsertSurahs = async (surahs: Surah[]): Promise<void> => {
 };
 
 // =============================================================================
-// Legacy Database Initialization (kept for backwards compatibility)
-// =============================================================================
-
-/**
- * @deprecated Use copyBundledDatabaseIfNeeded() + runMigrations() instead
- * Initializes database with CREATE TABLE statements
- * Only needed if bundled database is not available
- */
-export const initDatabase = async (): Promise<void> => {
-  try {
-    const database = getDb();
-
-    // Create reciters table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS reciters (
-        id TEXT PRIMARY KEY,
-        name_en TEXT NOT NULL,
-        name_ar TEXT NOT NULL,
-        color_primary TEXT NOT NULL,
-        color_secondary TEXT NOT NULL,
-        sort_order INTEGER NOT NULL DEFAULT 0
-      );
-    `);
-
-    // Create surahs table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS surahs (
-        number INTEGER PRIMARY KEY,
-        name_ar TEXT NOT NULL,
-        name_en TEXT NOT NULL
-      );
-    `);
-
-    // Create downloads table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS downloads (
-        reciter_id TEXT NOT NULL,
-        surah_number INTEGER NOT NULL,
-        local_file_path TEXT NOT NULL,
-        downloaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (reciter_id, surah_number)
-      );
-    `);
-
-    // Create app metadata table
-    await database.execAsync(`
-      CREATE TABLE IF NOT EXISTS app_metadata (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
-      );
-    `);
-
-    // Run migrations
-    await runMigrations();
-  } catch (error) {
-    console.error('Error initializing database:', error);
-    throw error;
-  }
-};
-
-// =============================================================================
 // Reciters CRUD
 // =============================================================================
 
@@ -362,8 +162,7 @@ export const insertReciter = async (reciter: Reciter): Promise<void> => {
 
 export const getAllReciters = async (): Promise<Reciter[]> => {
   const database = getDb();
-  const result = await database.getAllAsync<Reciter>('SELECT * FROM reciters ORDER BY sort_order');
-  return result;
+  return database.getAllAsync<Reciter>('SELECT * FROM reciters ORDER BY sort_order');
 };
 
 export const getReciterById = async (id: string): Promise<Reciter | null> => {
@@ -394,8 +193,7 @@ export const insertSurah = async (surah: Surah): Promise<void> => {
 
 export const getAllSurahs = async (): Promise<Surah[]> => {
   const database = getDb();
-  const result = await database.getAllAsync<Surah>('SELECT * FROM surahs ORDER BY number');
-  return result;
+  return database.getAllAsync<Surah>('SELECT * FROM surahs ORDER BY number');
 };
 
 export const getSurahByNumber = async (number: number): Promise<Surah | null> => {
@@ -433,19 +231,17 @@ export const getDownload = async (
 
 export const getAllDownloads = async (): Promise<Download[]> => {
   const database = getDb();
-  const result = await database.getAllAsync<Download>(
+  return database.getAllAsync<Download>(
     'SELECT * FROM downloads ORDER BY downloaded_at DESC'
   );
-  return result;
 };
 
 export const getDownloadsByReciter = async (reciterId: string): Promise<Download[]> => {
   const database = getDb();
-  const result = await database.getAllAsync<Download>(
+  return database.getAllAsync<Download>(
     'SELECT * FROM downloads WHERE reciter_id = ? ORDER BY surah_number',
     [reciterId]
   );
-  return result;
 };
 
 export const deleteDownload = async (
@@ -487,10 +283,3 @@ export const setMetadata = async (key: string, value: string): Promise<void> => 
     [key, value]
   );
 };
-
-// =============================================================================
-// Exports
-// =============================================================================
-
-// Export db getter for direct access if needed
-export { getDb as db };
