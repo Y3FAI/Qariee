@@ -25,11 +25,9 @@ Its goal is to provide a fast, reliable, and user-friendly experience for Quran 
 
 ```
 Qariee/
-├── . gitignore
-├── CLAUDE. md                     # Claude AI context
+├── .gitignore
+├── CLAUDE.md                     # Claude AI context
 ├── README.md
-├── backend.md                    # Backend documentation
-├── dev.md                        # Development guide
 ├── app/                          # React Native application
 └── backend/                      # CDN management
 ```
@@ -61,11 +59,11 @@ app/
 app/app/
 ├── _layout.tsx                   # Root layout + providers
 ├── index.tsx                     # Home (reciter grid)
-├── player. tsx                    # Full-screen player
+├── player.tsx                    # Full-screen player
 ├── settings.tsx                  # Settings screen
 ├── about.tsx                     # About screen
 └── reciter/
-    └── [id]. tsx                  # Reciter detail
+    └── [id].tsx                  # Reciter detail
 ```
 
 ---
@@ -74,13 +72,13 @@ app/app/
 
 ```
 app/src/
-├── components/                   # UI components (7 files)
+├── components/                   # UI components (6 files)
 ├── config/                       # Special config (1 file)
 ├── constants/                    # App constants (2 files)
 ├── contexts/                     # React contexts (4 files)
 ├── locales/                      # Translations (2 files)
 ├── services/                     # Business logic (6 files)
-├── types/                        # TypeScript types (1 file)
+├── types/                        # TypeScript types (2 files)
 └── utils/                        # Utilities (1 file)
 ```
 
@@ -90,13 +88,12 @@ app/src/
 
 ```
 app/src/components/
-├── CircularProgress. tsx          # Download progress
+├── CircularProgress.tsx          # Download progress
 ├── CustomDrawer.tsx              # Side drawer menu
 ├── MiniPlayer.tsx                # Bottom player bar
 ├── OfflineIndicator.tsx          # Network status
 ├── SleepTimerModal.tsx           # Sleep timer UI
-├── SurahName.tsx                 # Arabic calligraphy
-└── UpdateBanner.tsx              # Update notification
+└── SurahName.tsx                 # Arabic calligraphy
 ```
 
 ---
@@ -150,7 +147,7 @@ app/src/services/
 
 ```
 app/src/locales/
-├── ar. json                       # Arabic translations
+├── ar.json                       # Arabic translations
 └── en.json                       # English translations
 ```
 
@@ -160,7 +157,8 @@ app/src/locales/
 
 ```
 app/src/types/
-└── index.ts                      # All TypeScript interfaces
+├── index.ts                      # All TypeScript interfaces
+└── react-native-background-timer.d.ts  # Background timer type definitions
 ```
 
 ---
@@ -206,7 +204,7 @@ backend/
 │   └── download-audio-to-r2.sh  # Upload audio files
 └── cli/                          # Python CLI for CDN management
     ├── qariee_cli/
-    │   ├── commands/            # CLI commands (list, sync, add-reciter, upload-audio, generate-db)
+    │   ├── commands/            # CLI commands (list, sync, add-reciter, upload-audio, verify, generate-db)
     │   └── utils/               # R2 upload, db.json handling
     └── pyproject.toml           # CLI package config
 ```
@@ -238,6 +236,7 @@ wrangler login
 | `qariee add-reciter` | Add a new reciter (auto-generates colors) |
 | `qariee upload-audio <id> <url>` | Download & upload 114 MP3s to R2 |
 | `qariee sync` | Sync local r2/ to Cloudflare R2 |
+| `qariee verify` | Verify R2 metadata and audio files |
 | `qariee generate-db` | Regenerate app's bundled SQLite |
 
 ## Examples
@@ -366,14 +365,20 @@ npm run test:coverage # With coverage report
 ```
 app/
 ├── __mocks__/                    # Jest mocks
-│   ├── expo-sqlite.ts
-│   ├── expo-file-system.ts
+│   ├── async-storage.ts
+│   ├── expo-audio.ts
 │   ├── expo-asset.ts
-│   └── async-storage.ts
+│   ├── expo-file-system.ts
+│   ├── expo-media-control.ts
+│   ├── expo-sqlite.ts
+│   └── react-native-background-timer.ts
 └── src/services/__tests__/
     ├── test-utils.ts             # Factories & helpers
-    ├── database.test.ts          # 28 tests
-    └── syncService.test.ts       # 17 tests
+    ├── audioService.test.ts
+    ├── audioStorage.test.ts
+    ├── database.test.ts
+    ├── downloadService.test.ts
+    └── syncService.test.ts
 ```
 
 **Coverage Thresholds** (jest.config.js):

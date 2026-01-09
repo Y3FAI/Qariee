@@ -117,6 +117,7 @@ wrangler login
 | `qariee add-reciter` | Add a new reciter (auto-generates colors) |
 | `qariee upload-audio <id> <url>` | Download & upload 114 MP3s to R2 |
 | `qariee sync` | Sync local r2/ to Cloudflare R2 |
+| `qariee verify` | Verify R2 metadata and audio files |
 | `qariee generate-db` | Regenerate app's bundled SQLite |
 
 ### Examples
@@ -133,6 +134,9 @@ qariee upload-audio saad-alghamdi https://server8.mp3quran.net/s_gmd
 
 # Sync metadata and images to CDN
 qariee sync
+
+# Verify R2 content
+qariee verify
 
 # Regenerate app database
 qariee generate-db
