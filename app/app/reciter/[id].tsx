@@ -397,22 +397,7 @@ export default function ReciterDetailScreen() {
 
     return (
         <SafeAreaView style={styles.container} edges={[]}>
-            {/* Back Button - Above header */}
-            <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => router.replace("/")}
-                activeOpacity={0.7}
-            >
-                <Ionicons
-                    name="chevron-back"
-                    size={28}
-                    color="#efefd5"
-                    style={{ opacity: 0.5 }}
-                />
-            </TouchableOpacity>
-
             <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header with gradient */}
                 <LinearGradient
                     colors={[
                         hexToRgba(reciter.color_primary, 0.4),
@@ -422,6 +407,19 @@ export default function ReciterDetailScreen() {
                     ]}
                     style={styles.header}
                 >
+                    {/* Back Button inside header */}
+                    <TouchableOpacity
+                        style={styles.backButton}
+                        onPress={() => router.replace("/")}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons
+                            name="chevron-back"
+                            size={28}
+                            color="#efefd5"
+                            style={{ opacity: 0.5 }}
+                        />
+                    </TouchableOpacity>
                     <Image
                         source={{ uri: getReciterPhotoUrl(reciter.id) }}
                         style={styles.reciterPhoto}
@@ -567,9 +565,8 @@ const styles = StyleSheet.create({
     },
     backButton: {
         position: "absolute",
-        top: TOP_BUTTON_POSITION,
+        top: 20,
         left: 20,
-        zIndex: 100,
         width: 40,
         height: 40,
         justifyContent: "center",

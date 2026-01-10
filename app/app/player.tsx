@@ -487,27 +487,19 @@ export default function PlayerScreen() {
                                 right: 15,
                             }}
                         >
-                            <View
-                                style={
-                                    !rtl &&
-                                    playbackMode === "shuffle" &&
-                                    styles.shuffleFlip
+                            <Ionicons
+                                name={
+                                    playbackMode === "sequential"
+                                        ? rtl
+                                            ? "play-back"
+                                            : "play-forward"
+                                        : playbackMode === "shuffle"
+                                        ? "shuffle"
+                                        : "repeat"
                                 }
-                            >
-                                <Ionicons
-                                    name={
-                                        playbackMode === "sequential"
-                                            ? rtl
-                                                ? "play-forward"
-                                                : "play-back"
-                                            : playbackMode === "shuffle"
-                                            ? "shuffle"
-                                            : "repeat"
-                                    }
-                                    size={SIDE_BUTTON_SIZE}
-                                    color="#efefd5"
-                                />
-                            </View>
+                                size={SIDE_BUTTON_SIZE}
+                                color="#efefd5"
+                            />
                         </TouchableOpacity>
 
                         <TouchableOpacity
@@ -749,9 +741,6 @@ const styles = StyleSheet.create({
         marginLeft: 6,
     },
     playIconFlip: {
-        transform: [{ scaleX: -1 }],
-    },
-    shuffleFlip: {
         transform: [{ scaleX: -1 }],
     },
 })

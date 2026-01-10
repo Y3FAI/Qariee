@@ -6,7 +6,6 @@ import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { getReciterPhotoUrl } from "../constants/config"
 import { useAudio } from "../contexts/AudioContext"
-import { isRTL } from "../services/i18n"
 import { hexToRgba } from "../utils/color"
 
 // ===========================
@@ -48,7 +47,6 @@ const MIN_BOTTOM_SAFE_AREA = 8 // Minimum padding for Android nav bar
 export default function MiniPlayer() {
     const router = useRouter()
     const insets = useSafeAreaInsets()
-    const rtl = isRTL()
     const {
         currentTrack,
         isPlaying,
@@ -80,7 +78,7 @@ export default function MiniPlayer() {
             style={[styles.gradientContainer, { marginBottom: bottomMargin }]}
         >
             <TouchableOpacity
-                style={[styles.container, rtl && styles.containerRTL]}
+                style={styles.container}
                 activeOpacity={0.9}
                 onPress={() => {
                     router.push("/player")
@@ -99,14 +97,11 @@ export default function MiniPlayer() {
                             name={isPlaying ? "pause" : "play"}
                             size={PLAY_ICON_SIZE}
                             color="#efefd5"
-                            style={rtl && styles.playIconFlip}
                         />
                     </View>
                 </TouchableOpacity>
 
-                <View
-                    style={[styles.leftSection, rtl && styles.leftSectionRTL]}
-                >
+                <View style={styles.leftSection}>
                     <Image
                         source={{
                             uri: getReciterPhotoUrl(currentTrack.reciterId),
@@ -127,13 +122,8 @@ export default function MiniPlayer() {
                 </View>
             </TouchableOpacity>
 
-            {/* Progress bar - RTL-aware using transform */}
-            <View
-                style={[
-                    styles.progressBarContainer,
-                    rtl && styles.progressBarContainerRTL,
-                ]}
-            >
+            {/* Progress bar - always flows right to left */}
+            <View style={styles.progressBarContainer}>
                 <View style={styles.progressBar}>
                     <View
                         style={[
@@ -166,24 +156,17 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
     },
-    containerRTL: {
-        flexDirection: "row-reverse",
-    },
     leftSection: {
         flexDirection: "row-reverse",
         alignItems: "center",
         flex: 1,
         marginStart: 12,
     },
-    leftSectionRTL: {
-        justifyContent: "flex-end",
-    },
     artwork: {
         width: ARTWORK_SIZE,
         height: ARTWORK_SIZE,
         borderRadius: ARTWORK_BORDER_RADIUS,
         backgroundColor: "#404040",
-        marginEnd: ARTWORK_MARGIN_RIGHT,
     },
     info: {
         flex: 1,
@@ -202,10 +185,6 @@ const styles = StyleSheet.create({
         color: "#B3B3B3",
         fontSize: RECITER_NAME_SIZE,
     },
-
-    playIconFlip: {
-        transform: [{ scaleX: -1 }],
-    },
     playIconOffset: {
         marginLeft: 2,
     },
@@ -218,10 +197,7 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         height: PROGRESS_HEIGHT,
-        direction: "ltr", // Do not change unless explicitly instructed
-    },
-    progressBarContainerRTL: {
-        transform: [{ scaleX: -1 }], // Flip horizontally for RTL
+        transform: [{ scaleX: -1 }],
     },
     progressBar: {
         width: "100%",
