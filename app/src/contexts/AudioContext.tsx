@@ -92,6 +92,22 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }, [player])
 
     // ==========================================================================
+    // MediaControl callbacks for next/previous track buttons
+    // ==========================================================================
+    const playNextRef = useRef<() => Promise<void>>()
+    const playPreviousRef = useRef<() => Promise<void>>()
+
+    useEffect(() => {
+        // Use refs to avoid stale closures in callbacks
+        audioService.setOnNextTrack(() => {
+            playNextRef.current?.()
+        })
+        audioService.setOnPreviousTrack(() => {
+            playPreviousRef.current?.()
+        })
+    }, [])
+
+    // ==========================================================================
     // Refs for latest values (to avoid closure issues in callbacks)
     // ==========================================================================
     const queueRef = useRef(queue)
@@ -183,18 +199,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!currentTrack) return
 
+        // Update immediately when isPlaying changes
+        audioService.updatePlaybackState(isPlaying)
+
+        if (!isPlaying) return
+
         // Update playback state every second when playing
+        // Use audioService.getCurrentTime() for accurate position (not stale state)
         const interval = setInterval(() => {
-            if (isPlaying) {
-                audioService.updatePlaybackState(isPlaying, position)
-            }
+            audioService.updatePlaybackState(true)
         }, 1000)
 
-        // Also update immediately when isPlaying changes
-        audioService.updatePlaybackState(isPlaying, position)
-
         return () => clearInterval(interval)
-    }, [currentTrack, isPlaying, position])
+    }, [currentTrack, isPlaying])
 
     // ==========================================================================
     // Media Controls - Update metadata when track changes
@@ -242,6 +259,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
             await preloadSavedSession(savedSession)
         }
+
+        // Mark initialization complete - MediaControl events now allowed
+        audioService.markInitComplete()
     }, [])
 
     const preloadSavedSession = async (savedSession: ListeningSession) => {
@@ -288,6 +308,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         // Replace source and wait for it to load
         player.replace(audioSource)
         await new Promise(r => setTimeout(r, 100))
+
+        // Ensure player is paused (expo-audio might auto-play in some cases)
+        audioService.pause()
 
         if (savedSession.position > 0) {
             audioService.seekTo(savedSession.position)
@@ -506,6 +529,12 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             setQueue([...originalQueue])
         }
     }
+
+    // Keep refs updated for MediaControl callbacks
+    useEffect(() => {
+        playNextRef.current = playNext
+        playPreviousRef.current = playPrevious
+    })
 
     // ==========================================================================
     // Session persistence helper

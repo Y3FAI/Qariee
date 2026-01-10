@@ -31,20 +31,34 @@ class AudioService {
     private player: ReturnType<typeof import('expo-audio').useAudioPlayer> | null = null
     private playbackStatusSubscription: ReturnType<ReturnType<typeof import('expo-audio').useAudioPlayer>['addListener']> | null = null
     private onPlaybackFinish: (() => void) | null = null
+    private onNextTrack: (() => void) | null = null
+    private onPreviousTrack: (() => void) | null = null
     private mediaControlsEnabled = false
-    private currentMetadata: {
+    private mediaControlListenerSetup = false // Prevent duplicate listeners
+    private isInitializing = true // Ignore media control events during startup
+    private lastMetadata: {
         title?: string
         artist?: string
-        artwork?: string
+        artworkUrl?: string
         duration?: number
-    } = {}
+    } | null = null
 
     initialize(player: ReturnType<typeof import('expo-audio').useAudioPlayer>) {
         this.player = player
         this.startStatusListener()
         this.setupMediaControls()
         // Enable BackgroundTimer for sleep timer when screen is off
-        BackgroundTimer.start()
+        try {
+            BackgroundTimer.start()
+        } catch (error) {
+            console.warn('[AudioService] BackgroundTimer.start() failed:', error)
+        }
+    }
+
+    // Call this when session restore is complete to allow MediaControl events
+    markInitComplete() {
+        this.isInitializing = false
+        console.log('[AudioService] Initialization complete, MediaControl events enabled')
     }
 
     private startStatusListener() {
@@ -79,38 +93,59 @@ class AudioService {
                 },
             })
 
+            // Only add listener once to prevent duplicates
+            if (this.mediaControlListenerSetup) {
+                this.mediaControlsEnabled = true
+                return
+            }
+            this.mediaControlListenerSetup = true
+
             MediaControl.addListener((event) => {
                 console.log('[MediaControl] Event:', event.command)
-                switch (event.command) {
-                    case Command.PLAY:
-                        this.resume()
-                        break
-                    case Command.PAUSE:
-                        this.pause()
-                        break
-                    case Command.NEXT_TRACK:
-                        // This will be handled by AudioContext
-                        if (this.onPlaybackFinish) {
-                            this.onPlaybackFinish()
-                        }
-                        break
-                    case Command.PREVIOUS_TRACK:
-                        // This will be handled by AudioContext
-                        break
-                    case Command.STOP:
-                        this.stop()
-                        break
-                    case Command.SKIP_FORWARD:
-                        this.seekTo(Math.min(this.getCurrentTime() + 15, this.getDuration()))
-                        break
-                    case Command.SKIP_BACKWARD:
-                        this.seekTo(Math.max(this.getCurrentTime() - 15, 0))
-                        break
-                    case Command.SEEK:
-                        if (event.data?.position !== undefined) {
-                            this.seekTo(event.data.position)
-                        }
-                        break
+
+                // Ignore PLAY events during initialization to prevent auto-play on app open
+                if (this.isInitializing && event.command === Command.PLAY) {
+                    console.log('[MediaControl] Ignoring PLAY during initialization')
+                    return
+                }
+
+                try {
+                    switch (event.command) {
+                        case Command.PLAY:
+                            this.resume()
+                            break
+                        case Command.PAUSE:
+                            this.pause()
+                            break
+                        case Command.NEXT_TRACK:
+                            if (this.onNextTrack) {
+                                this.onNextTrack()
+                            }
+                            break
+                        case Command.PREVIOUS_TRACK:
+                            if (this.onPreviousTrack) {
+                                this.onPreviousTrack()
+                            }
+                            break
+                        case Command.STOP:
+                            this.stop()
+                            this.hideNotification()
+                            break
+                        case Command.SKIP_FORWARD:
+                            this.seekTo(Math.min(this.getCurrentTime() + 15, this.getDuration()))
+                            break
+                        case Command.SKIP_BACKWARD:
+                            this.seekTo(Math.max(this.getCurrentTime() - 15, 0))
+                            break
+                        case Command.SEEK:
+                            if (event.data?.position !== undefined) {
+                                this.seekTo(event.data.position)
+                            }
+                            break
+                    }
+                } catch (error) {
+                    // Player may be released (e.g., offline with no downloaded track)
+                    console.warn('[MediaControl] Failed to handle event:', event.command, error)
                 }
             })
 
@@ -127,6 +162,9 @@ class AudioService {
         artworkUrl?: string
         duration?: number
     }) {
+        // Store for re-applying after showNotification()
+        this.lastMetadata = metadata
+
         if (!this.mediaControlsEnabled) return
 
         try {
@@ -158,44 +196,110 @@ class AudioService {
         }
     }
 
+    async hideNotification() {
+        if (!this.mediaControlsEnabled) return
+
+        try {
+            await MediaControl.disableMediaControls()
+            this.mediaControlsEnabled = false
+            console.log('[MediaControl] Disabled/hidden')
+        } catch (error) {
+            console.error('[MediaControl] Failed to disable:', error)
+        }
+    }
+
+    async showNotification() {
+        if (this.mediaControlsEnabled) return
+        await this.setupMediaControls()
+
+        // Re-apply last metadata after re-enabling controls
+        if (this.lastMetadata) {
+            await this.updateMediaMetadata(this.lastMetadata)
+        }
+    }
+
     setOnPlaybackFinish(callback: () => void) {
         this.onPlaybackFinish = callback
+    }
+
+    setOnNextTrack(callback: () => void) {
+        this.onNextTrack = callback
+    }
+
+    setOnPreviousTrack(callback: () => void) {
+        this.onPreviousTrack = callback
     }
 
     async play(audioSource: string) {
         if (!this.player) throw new Error('Player not initialized')
 
-        this.player.replace(audioSource)
-        await new Promise(r => setTimeout(r, 100))
-        this.player.play()
+        // Re-enable notification if it was hidden
+        await this.showNotification()
+
+        try {
+            this.player.replace(audioSource)
+            await new Promise(r => setTimeout(r, 100))
+            this.player.play()
+        } catch (error) {
+            console.warn('[AudioService] play() failed:', error)
+            throw error // Re-throw so caller knows playback failed
+        }
     }
 
     pause() {
-        this.player?.pause()
+        try {
+            this.player?.pause()
+        } catch (error) {
+            console.warn('[AudioService] pause() failed:', error)
+        }
     }
 
     resume() {
-        this.player?.play()
+        try {
+            this.player?.play()
+        } catch (error) {
+            console.warn('[AudioService] resume() failed:', error)
+        }
     }
 
     stop() {
-        this.player?.pause()
+        try {
+            this.player?.pause()
+        } catch (error) {
+            console.warn('[AudioService] stop() failed:', error)
+        }
     }
 
     seekTo(position: number) {
-        this.player?.seekTo(position)
+        try {
+            this.player?.seekTo(position)
+        } catch (error) {
+            console.warn('[AudioService] seekTo() failed:', error)
+        }
     }
 
     getPlaying() {
-        return this.player?.playing ?? false
+        try {
+            return this.player?.playing ?? false
+        } catch {
+            return false
+        }
     }
 
     getCurrentTime() {
-        return this.player?.currentTime ?? 0
+        try {
+            return this.player?.currentTime ?? 0
+        } catch {
+            return 0
+        }
     }
 
     getDuration() {
-        return this.player?.duration ?? 0
+        try {
+            return this.player?.duration ?? 0
+        } catch {
+            return 0
+        }
     }
 
     getPlayer() {
