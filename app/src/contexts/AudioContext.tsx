@@ -8,24 +8,16 @@ import {
     useCallback,
 } from "react"
 import { AppState, AppStateStatus } from "react-native"
+import BackgroundTimer from "react-native-background-timer"
 import { useAudioPlayer, setAudioModeAsync, AudioStatus } from "expo-audio"
 import { audioService, Track, PlaybackMode } from "../services/audioService"
 import { useNetwork } from "./NetworkContext"
 import { audioStorage, ListeningSession } from "../services/audioStorage"
 import { downloadService } from "../services/downloadService"
 import { getAudioUrl } from "../constants/config"
+import { useMediaControl } from "../hooks/useMediaControl"
 
-interface CurrentTrack {
-    reciterId: string
-    reciterName: string
-    surahName: string
-    surahNumber: number
-    reciterColorPrimary?: string
-    reciterColorSecondary?: string
-}
-
-// TrackReference is used for history tracking (doesn't need audioUrl/isDownloaded)
-interface TrackReference {
+interface TrackInfo {
     reciterId: string
     reciterName: string
     surahName: string
@@ -35,16 +27,14 @@ interface TrackReference {
 }
 
 interface AudioContextType {
-    currentTrack: CurrentTrack | null
-    setCurrentTrack: (track: CurrentTrack | null) => void
+    currentTrack: TrackInfo | null
+    setCurrentTrack: (track: TrackInfo | null) => void
     isPlaying: boolean
     setIsPlaying: (playing: boolean) => void
     position: number
     duration: number
     playbackMode: PlaybackMode
-    setPlaybackMode: (
-        mode: PlaybackMode | ((prev: PlaybackMode) => PlaybackMode),
-    ) => void
+    setPlaybackMode: (mode: PlaybackMode | ((prev: PlaybackMode) => PlaybackMode)) => void
     playTrack: (track: Track, queue?: Track[]) => Promise<void>
     togglePlayPause: () => void
     seekTo: (seconds: number) => Promise<void>
@@ -62,7 +52,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     // ==========================================================================
     // State
     // ==========================================================================
-    const [currentTrack, setCurrentTrack] = useState<CurrentTrack | null>(null)
+    const [currentTrack, setCurrentTrack] = useState<TrackInfo | null>(null)
     const [isPlaying, setIsPlaying] = useState(false)
     const [position, setPosition] = useState(0)
     const [duration, setDuration] = useState(0)
@@ -70,8 +60,147 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const [queue, setQueue] = useState<Track[]>([])
     const [originalQueue, setOriginalQueue] = useState<Track[]>([])
     const [playedTrackIds, setPlayedTrackIds] = useState<Set<string>>(new Set())
-    const [shuffleHistory, setShuffleHistory] = useState<TrackReference[]>([])
-    const [playedTracksOrder, setPlayedTracksOrder] = useState<TrackReference[]>([])
+    const [shuffleHistory, setShuffleHistory] = useState<TrackInfo[]>([])
+    const [playedTracksOrder, setPlayedTracksOrder] = useState<TrackInfo[]>([])
+
+    // ==========================================================================
+    // Refs for latest values (to avoid closure issues in callbacks)
+    // ==========================================================================
+    const queueRef = useRef(queue)
+    const currentTrackRef = useRef(currentTrack)
+    const playbackModeRef = useRef(playbackMode)
+
+    useEffect(() => { queueRef.current = queue }, [queue])
+    useEffect(() => { currentTrackRef.current = currentTrack }, [currentTrack])
+    useEffect(() => { playbackModeRef.current = playbackMode }, [playbackMode])
+
+    // ==========================================================================
+    // Shuffle
+    // ==========================================================================
+    const shuffleArray = <T,>(array: T[]): T[] => {
+        const shuffled = [...array]
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        }
+        return shuffled
+    }
+
+    const getShuffledQueue = useCallback((tracks: Track[]): Track[] => {
+        const recentIds = shuffleHistory.slice(0, 5).map(t => `${t.reciterId}:${t.surahNumber}`)
+        const available = tracks.filter(t => !recentIds.includes(`${t.reciterId}:${t.surahNumber}`))
+
+        if (available.length === 0) {
+            return shuffleArray(tracks)
+        }
+        return shuffleArray(available)
+    }, [shuffleHistory])
+
+    // ==========================================================================
+    // Actions (defined early so they can be passed to useMediaControl)
+    // ==========================================================================
+    const playNext = useCallback(async () => {
+        if (queueRef.current.length === 0) {
+            audioService.pause()
+            return
+        }
+
+        const nextTrack = queueRef.current[0]
+        const remainingQueue = queueRef.current.slice(1)
+        const current = currentTrackRef.current
+
+        if (current) {
+            setPlayedTracksOrder(prev => [...prev, current])
+        }
+        if (playbackModeRef.current === "shuffle" && current) {
+            setShuffleHistory(prev => [current, ...prev].slice(0, 5))
+        }
+
+        let nextQueue = remainingQueue
+        if (isOffline && remainingQueue.length > 0) {
+            const downloaded = await Promise.all(
+                remainingQueue.map(async t => {
+                    const localPath = await downloadService.getLocalPath(t.reciterId, t.surahNumber)
+                    return localPath ? t : null
+                })
+            )
+            nextQueue = downloaded.filter((t): t is Track => t !== null)
+        }
+
+        if (playbackModeRef.current === "shuffle") {
+            const recentIds = shuffleHistory.slice(0, 5).map(t => `${t.reciterId}:${t.surahNumber}`)
+            const available = nextQueue.filter(t => !recentIds.includes(`${t.reciterId}:${t.surahNumber}`))
+
+            if (available.length > 0) {
+                nextQueue = shuffleArray(available)
+            }
+        }
+
+        setQueue(nextQueue)
+        setCurrentTrack({
+            reciterId: nextTrack.reciterId,
+            reciterName: nextTrack.reciterName,
+            surahName: nextTrack.surahName,
+            surahNumber: nextTrack.surahNumber,
+            reciterColorPrimary: nextTrack.reciterColorPrimary,
+            reciterColorSecondary: nextTrack.reciterColorSecondary,
+        })
+
+        const localPath = await downloadService.getLocalPath(nextTrack.reciterId, nextTrack.surahNumber)
+        await audioService.play(localPath || nextTrack.audioUrl)
+    }, [isOffline, shuffleHistory])
+
+    const playPrevious = useCallback(async () => {
+        if (playedTracksOrder.length === 0) return
+
+        const prevTrack = playedTracksOrder[playedTracksOrder.length - 1]
+        setPlayedTracksOrder(prev => prev.slice(0, -1))
+
+        const { getAllSurahs } = await import("../services/database")
+        const { isRTL } = await import("../services/i18n")
+
+        const allSurahs = await getAllSurahs()
+        const rtl = isRTL()
+
+        const rebuildQueue: Track[] = allSurahs
+            .filter(s => s.number > prevTrack.surahNumber)
+            .map(surah => ({
+                reciterId: prevTrack.reciterId,
+                reciterName: prevTrack.reciterName,
+                surahNumber: surah.number,
+                surahName: rtl ? surah.name_ar : surah.name_en,
+                audioUrl: getAudioUrl(prevTrack.reciterId, surah.number),
+                isDownloaded: false,
+                reciterColorPrimary: prevTrack.reciterColorPrimary,
+                reciterColorSecondary: prevTrack.reciterColorSecondary,
+            }))
+
+        setQueue(playbackModeRef.current === "shuffle" ? shuffleArray(rebuildQueue) : rebuildQueue)
+        setOriginalQueue(rebuildQueue)
+
+        setCurrentTrack({
+            reciterId: prevTrack.reciterId,
+            reciterName: prevTrack.reciterName,
+            surahName: prevTrack.surahName,
+            surahNumber: prevTrack.surahNumber,
+            reciterColorPrimary: prevTrack.reciterColorPrimary,
+            reciterColorSecondary: prevTrack.reciterColorSecondary,
+        })
+
+        const localPath = await downloadService.getLocalPath(prevTrack.reciterId, prevTrack.surahNumber)
+        await audioService.play(localPath || getAudioUrl(prevTrack.reciterId, prevTrack.surahNumber))
+    }, [playedTracksOrder])
+
+    // ==========================================================================
+    // MediaControl Hook
+    // ==========================================================================
+    const { show: showMediaControl, markInitialized } = useMediaControl({
+        currentTrack,
+        isPlaying,
+        duration,
+        onNext: playNext,
+        onPrevious: playPrevious,
+    })
 
     // ==========================================================================
     // Initialize
@@ -87,65 +216,25 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         })
 
         loadSavedState()
-
-        return () => {}
     }, [player])
 
     // ==========================================================================
-    // MediaControl callbacks for next/previous track buttons
-    // ==========================================================================
-    const playNextRef = useRef<() => Promise<void>>()
-    const playPreviousRef = useRef<() => Promise<void>>()
-
-    useEffect(() => {
-        // Use refs to avoid stale closures in callbacks
-        audioService.setOnNextTrack(() => {
-            playNextRef.current?.()
-        })
-        audioService.setOnPreviousTrack(() => {
-            playPreviousRef.current?.()
-        })
-    }, [])
-
-    // ==========================================================================
-    // Refs for latest values (to avoid closure issues in callbacks)
-    // ==========================================================================
-    const queueRef = useRef(queue)
-    const currentTrackRef = useRef(currentTrack)
-    const playbackModeRef = useRef(playbackMode)
-
-    useEffect(() => { queueRef.current = queue }, [queue])
-    useEffect(() => { currentTrackRef.current = currentTrack }, [currentTrack])
-    useEffect(() => { playbackModeRef.current = playbackMode }, [playbackMode])
-
-    // ==========================================================================
-    // Track finish handler (defined before effects that use it)
+    // Track finish handler
     // ==========================================================================
     const handleTrackFinished = useCallback(() => {
         const current = currentTrackRef.current
         if (!current) return
 
-        console.log('[AudioContext] Track finished, handling auto-advance')
-        console.log('[AudioContext] Queue length:', queueRef.current.length)
-
-        // Mark current track as played
         setPlayedTrackIds(prev => new Set([...prev, `${current.reciterId}:${current.surahNumber}`]))
 
         if (playbackModeRef.current === "repeat") {
-            // Replay from beginning
-            console.log('[AudioContext] Repeat mode - restarting track')
             audioService.seekTo(0)
             audioService.resume()
         } else if (queueRef.current.length > 0) {
-            // Play next in queue
-            console.log('[AudioContext] Playing next track')
             const nextTrack = queueRef.current[0]
             const remainingQueue = queueRef.current.slice(1)
 
-            // Update played order
             setPlayedTracksOrder(prev => [...prev, current])
-
-            // Set current track to next
             setCurrentTrack({
                 reciterId: nextTrack.reciterId,
                 reciterName: nextTrack.reciterName,
@@ -154,24 +243,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                 reciterColorPrimary: nextTrack.reciterColorPrimary,
                 reciterColorSecondary: nextTrack.reciterColorSecondary,
             })
-
-            // Update queue
             setQueue(remainingQueue)
 
-            // Play the next track
             downloadService.getLocalPath(nextTrack.reciterId, nextTrack.surahNumber).then(localPath => {
                 const audioSource = localPath || nextTrack.audioUrl
-                console.log('[AudioContext] Auto-advancing to:', nextTrack.surahName)
                 audioService.play(audioSource)
             })
         } else {
-            console.log('[AudioContext] No more tracks in queue')
             audioService.pause()
         }
     }, [])
 
     // ==========================================================================
-    // Player events - handles status updates AND auto-advance
+    // Player events
     // ==========================================================================
     useEffect(() => {
         if (!player) return
@@ -183,54 +267,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
                 setDuration(status.duration || 0)
             }
 
-            // Handle track finish for auto-advance
             if (status.didJustFinish) {
-                console.log('[AudioContext] didJustFinish detected')
                 handleTrackFinished()
             }
         })
 
         return () => subscription.remove()
     }, [player, handleTrackFinished])
-
-    // ==========================================================================
-    // Media Controls - Update playback state periodically
-    // ==========================================================================
-    useEffect(() => {
-        if (!currentTrack) return
-
-        // Update immediately when isPlaying changes
-        audioService.updatePlaybackState(isPlaying)
-
-        if (!isPlaying) return
-
-        // Update playback state every second when playing
-        // Use audioService.getCurrentTime() for accurate position (not stale state)
-        const interval = setInterval(() => {
-            audioService.updatePlaybackState(true)
-        }, 1000)
-
-        return () => clearInterval(interval)
-    }, [currentTrack, isPlaying])
-
-    // ==========================================================================
-    // Media Controls - Update metadata when track changes
-    // ==========================================================================
-    useEffect(() => {
-        if (!currentTrack) return
-
-        const updateMetadata = async () => {
-            const { getReciterPhotoUrl } = await import("../constants/config")
-            await audioService.updateMediaMetadata({
-                title: currentTrack.surahName,
-                artist: currentTrack.reciterName,
-                artworkUrl: getReciterPhotoUrl(currentTrack.reciterId),
-                duration: duration > 0 ? duration : undefined,
-            })
-        }
-
-        updateMetadata()
-    }, [currentTrack])
 
     // ==========================================================================
     // Load saved state
@@ -245,24 +288,22 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         if (savedSession) {
             setPlayedTrackIds(new Set(savedSession.playedTrackIds || []))
 
-            const track: CurrentTrack = {
+            setCurrentTrack({
                 reciterId: savedSession.reciterId,
                 reciterName: savedSession.reciterName,
                 surahName: savedSession.surahName,
                 surahNumber: savedSession.surahNumber,
                 reciterColorPrimary: savedSession.reciterColorPrimary,
                 reciterColorSecondary: savedSession.reciterColorSecondary,
-            }
-            setCurrentTrack(track)
+            })
             setPosition(savedSession.position)
             setDuration(savedSession.duration)
 
             await preloadSavedSession(savedSession)
         }
 
-        // Mark initialization complete - MediaControl events now allowed
-        audioService.markInitComplete()
-    }, [])
+        markInitialized()
+    }, [markInitialized])
 
     const preloadSavedSession = async (savedSession: ListeningSession) => {
         const { getAllSurahs } = await import("../services/database")
@@ -273,17 +314,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         if (!currentSurah) return
 
         const rtl = isRTL()
-        const track: Track = {
-            reciterId: savedSession.reciterId,
-            reciterName: savedSession.reciterName,
-            surahNumber: savedSession.surahNumber,
-            surahName: rtl ? currentSurah.name_ar : currentSurah.name_en,
-            audioUrl: getAudioUrl(savedSession.reciterId, savedSession.surahNumber),
-            isDownloaded: false,
-            reciterColorPrimary: savedSession.reciterColorPrimary,
-            reciterColorSecondary: savedSession.reciterColorSecondary,
-        }
-
         const trackQueue: Track[] = allSurahs
             .filter(s => s.number > savedSession.surahNumber)
             .map(surah => ({
@@ -300,16 +330,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setQueue(trackQueue)
         setOriginalQueue(trackQueue)
 
-        // Load the track into player but DON'T auto-play
-        // User must click play to resume - better UX
-        const localPath = await downloadService.getLocalPath(track.reciterId, track.surahNumber)
-        const audioSource = localPath || track.audioUrl
+        const localPath = await downloadService.getLocalPath(savedSession.reciterId, savedSession.surahNumber)
+        const audioSource = localPath || getAudioUrl(savedSession.reciterId, savedSession.surahNumber)
 
-        // Replace source and wait for it to load
         player.replace(audioSource)
         await new Promise(r => setTimeout(r, 100))
-
-        // Ensure player is paused (expo-audio might auto-play in some cases)
         audioService.pause()
 
         if (savedSession.position > 0) {
@@ -320,37 +345,13 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
 
     // ==========================================================================
-    // Shuffle
-    // ==========================================================================
-    const shuffleArray = <T,>(array: T[]): T[] => {
-        const shuffled = [...array]
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1))
-            ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-        }
-        return shuffled
-    }
-
-    const getShuffledQueue = useCallback((tracks: Track[]): Track[] => {
-        // Filter out recently played (last 5)
-        const recentIds = shuffleHistory.slice(0, 5).map(t => `${t.reciterId}:${t.surahNumber}`)
-        const available = tracks.filter(t => !recentIds.includes(`${t.reciterId}:${t.surahNumber}`))
-
-        if (available.length === 0) {
-            // All tracks played recently, shuffle full queue
-            return shuffleArray(tracks)
-        }
-
-        return shuffleArray(available)
-    }, [shuffleHistory])
-
-    // ==========================================================================
     // Actions
     // ==========================================================================
     const playTrack = async (track: Track, trackQueue: Track[] = []) => {
         sessionLoadedRef.current = true
 
-        // Build queue if offline
+        await showMediaControl()
+
         let filteredQueue = trackQueue
         if (isOffline && trackQueue.length > 0) {
             const downloaded = await Promise.all(
@@ -362,7 +363,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             filteredQueue = downloaded.filter((t): t is Track => t !== null)
         }
 
-        // Apply shuffle if needed
         let finalQueue = filteredQueue
         if (playbackMode === "shuffle" && filteredQueue.length > 0) {
             finalQueue = getShuffledQueue(filteredQueue)
@@ -402,117 +402,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     }
 
     const seekTo = async (seconds: number) => {
-        await audioService.seekTo(seconds)
-    }
-
-    const playNext = async () => {
-        if (queue.length === 0) {
-            audioService.pause()
-            return
-        }
-
-        const nextTrack = queue[0]
-        const remainingQueue = queue.slice(1)
-
-        // Update played order
-        if (currentTrack) {
-            setPlayedTracksOrder(prev => [...prev, currentTrack])
-        }
-        if (playbackMode === "shuffle") {
-            setShuffleHistory(prev => [currentTrack!, ...prev].slice(0, 5))
-        }
-
-        // Build next queue (filter for offline)
-        let nextQueue = remainingQueue
-        if (isOffline && remainingQueue.length > 0) {
-            const downloaded = await Promise.all(
-                remainingQueue.map(async t => {
-                    const localPath = await downloadService.getLocalPath(t.reciterId, t.surahNumber)
-                    return localPath ? t : null
-                })
-            )
-            nextQueue = downloaded.filter((t): t is Track => t !== null)
-        }
-
-        // Re-shuffle if needed
-        if (playbackMode === "shuffle") {
-            // Add current track to history before shuffling
-            const updatedHistory = currentTrack ? [currentTrack, ...shuffleHistory].slice(0, 5) : shuffleHistory
-            setShuffleHistory(updatedHistory)
-
-            // Re-shuffle remaining queue
-            const recentIds = updatedHistory.map(t => `${t.reciterId}:${t.surahNumber}`)
-            const available = nextQueue.filter(t => !recentIds.includes(`${t.reciterId}:${t.surahNumber}`))
-
-            if (available.length > 0) {
-                nextQueue = shuffleArray(available)
-            }
-        }
-
-        setQueue(nextQueue)
-        setCurrentTrack({
-            reciterId: nextTrack.reciterId,
-            reciterName: nextTrack.reciterName,
-            surahName: nextTrack.surahName,
-            surahNumber: nextTrack.surahNumber,
-            reciterColorPrimary: nextTrack.reciterColorPrimary,
-            reciterColorSecondary: nextTrack.reciterColorSecondary,
-        })
-
-        const localPath = await downloadService.getLocalPath(nextTrack.reciterId, nextTrack.surahNumber)
-        const audioSource = localPath || nextTrack.audioUrl
-
-        console.log('[AudioContext] playNext: playing', nextTrack.surahName)
-        await audioService.play(audioSource)
-    }
-
-    const playPrevious = async () => {
-        if (playedTracksOrder.length === 0) return
-
-        const prevTrack = playedTracksOrder[playedTracksOrder.length - 1]
-        const newOrder = playedTracksOrder.slice(0, -1)
-        setPlayedTracksOrder(newOrder)
-
-        // Rebuild queue with this track and everything after
-        const { getAllSurahs } = await import("../services/database")
-        const { isRTL } = await import("../services/i18n")
-
-        const allSurahs = await getAllSurahs()
-        const rtl = isRTL()
-
-        const rebuildQueue: Track[] = allSurahs
-            .filter(s => s.number > prevTrack.surahNumber)
-            .map(surah => ({
-                reciterId: prevTrack.reciterId,
-                reciterName: prevTrack.reciterName,
-                surahNumber: surah.number,
-                surahName: rtl ? surah.name_ar : surah.name_en,
-                audioUrl: getAudioUrl(prevTrack.reciterId, surah.number),
-                isDownloaded: false,
-                reciterColorPrimary: prevTrack.reciterColorPrimary,
-                reciterColorSecondary: prevTrack.reciterColorSecondary,
-            }))
-
-        if (playbackMode === "shuffle") {
-            setQueue(shuffleArray(rebuildQueue))
-        } else {
-            setQueue(rebuildQueue)
-        }
-        setOriginalQueue(rebuildQueue)
-
-        setCurrentTrack({
-            reciterId: prevTrack.reciterId,
-            reciterName: prevTrack.reciterName,
-            surahName: prevTrack.surahName,
-            surahNumber: prevTrack.surahNumber,
-            reciterColorPrimary: prevTrack.reciterColorPrimary,
-            reciterColorSecondary: prevTrack.reciterColorSecondary,
-        })
-
-        const localPath = await downloadService.getLocalPath(prevTrack.reciterId, prevTrack.surahNumber)
-        const audioSource = localPath || getAudioUrl(prevTrack.reciterId, prevTrack.surahNumber)
-
-        await audioService.play(audioSource)
+        audioService.seekTo(seconds)
     }
 
     const setPlaybackMode = (mode: PlaybackMode | ((prev: PlaybackMode) => PlaybackMode)) => {
@@ -520,27 +410,19 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         setPlaybackModeState(newMode)
         audioStorage.savePlaybackMode(newMode)
 
-        // Re-shuffle current queue if switching to shuffle
         if (newMode === "shuffle" && queue.length > 0) {
-            const shuffled = getShuffledQueue(queue)
-            setQueue(shuffled)
+            setQueue(getShuffledQueue(queue))
             setOriginalQueue(queue)
         } else if (newMode === "sequential" && originalQueue.length > 0) {
             setQueue([...originalQueue])
         }
     }
 
-    // Keep refs updated for MediaControl callbacks
-    useEffect(() => {
-        playNextRef.current = playNext
-        playPreviousRef.current = playPrevious
-    })
-
     // ==========================================================================
-    // Session persistence helper
+    // Session persistence
     // ==========================================================================
     const buildSessionData = useCallback((
-        track: CurrentTrack,
+        track: TrackInfo,
         pos: number,
         dur: number,
     ): ListeningSession => ({
@@ -564,20 +446,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         })),
     }), [playedTrackIds, shuffleHistory, playedTracksOrder])
 
-    // Save session periodically while playing
     useEffect(() => {
         if (!currentTrack || !sessionLoadedRef.current || !isPlaying) return
 
-        const saveInterval = setInterval(() => {
+        const interval = BackgroundTimer.setInterval(() => {
             audioStorage.saveListeningSession(
                 buildSessionData(currentTrack, audioService.getCurrentTime(), audioService.getDuration())
             )
         }, 1000)
 
-        return () => clearInterval(saveInterval)
+        return () => BackgroundTimer.clearInterval(interval)
     }, [currentTrack, isPlaying, buildSessionData])
 
-    // Save session on pause
     useEffect(() => {
         if (!isPlaying && currentTrack && duration > 0 && sessionLoadedRef.current) {
             audioStorage.saveListeningSession(buildSessionData(currentTrack, position, duration))
@@ -605,7 +485,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     // Offline handling
     // ==========================================================================
     useEffect(() => {
-        // If going offline and current track not downloaded, stop
         if (isOffline && currentTrack) {
             downloadService.isDownloaded(currentTrack.reciterId, currentTrack.surahNumber).then(
                 isDownloaded => {

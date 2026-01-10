@@ -234,11 +234,13 @@ const styles = StyleSheet.create({
   cardInfo: {
     paddingTop: 12,
     alignItems: 'center',
+    width: CARD_WIDTH,
   },
   reciterName: {
     fontSize: 14,
     color: '#B3B3B3',
     textAlign: 'center',
+    width: '100%',
   },
   loadingText: {
     color: '#efefd5',

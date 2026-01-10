@@ -1,9 +1,8 @@
 /**
- * Audio Service - Thin wrapper around expo-audio
- * All state is managed by AudioContext
+ * Audio Service - Pure audio playback wrapper
+ * No MediaControl logic - that's handled by AudioContext
  */
 
-import MediaControl, { PlaybackState, Command } from 'expo-media-control';
 import BackgroundTimer from 'react-native-background-timer';
 
 // =============================================================================
@@ -24,29 +23,14 @@ export interface Track {
 export type PlaybackMode = 'sequential' | 'shuffle' | 'repeat'
 
 // =============================================================================
-// Audio Service (Player Wrapper)
+// Audio Service (Pure Player Wrapper)
 // =============================================================================
 
 class AudioService {
     private player: ReturnType<typeof import('expo-audio').useAudioPlayer> | null = null
-    private playbackStatusSubscription: ReturnType<ReturnType<typeof import('expo-audio').useAudioPlayer>['addListener']> | null = null
-    private onPlaybackFinish: (() => void) | null = null
-    private onNextTrack: (() => void) | null = null
-    private onPreviousTrack: (() => void) | null = null
-    private mediaControlsEnabled = false
-    private mediaControlListenerSetup = false // Prevent duplicate listeners
-    private isInitializing = true // Ignore media control events during startup
-    private lastMetadata: {
-        title?: string
-        artist?: string
-        artworkUrl?: string
-        duration?: number
-    } | null = null
 
     initialize(player: ReturnType<typeof import('expo-audio').useAudioPlayer>) {
         this.player = player
-        this.startStatusListener()
-        this.setupMediaControls()
         // Enable BackgroundTimer for sleep timer when screen is off
         try {
             BackgroundTimer.start()
@@ -55,186 +39,8 @@ class AudioService {
         }
     }
 
-    // Call this when session restore is complete to allow MediaControl events
-    markInitComplete() {
-        this.isInitializing = false
-        console.log('[AudioService] Initialization complete, MediaControl events enabled')
-    }
-
-    private startStatusListener() {
-        if (!this.player) return
-
-        this.playbackStatusSubscription?.remove()
-        this.playbackStatusSubscription = this.player.addListener(
-            'playbackStatusUpdate',
-            (status) => {
-                if (status.didJustFinish && this.onPlaybackFinish) {
-                    this.onPlaybackFinish()
-                }
-            }
-        )
-    }
-
-    private async setupMediaControls() {
-        try {
-            await MediaControl.enableMediaControls({
-                capabilities: [
-                    Command.PLAY,
-                    Command.PAUSE,
-                    Command.NEXT_TRACK,
-                    Command.PREVIOUS_TRACK,
-                    Command.STOP,
-                    Command.SKIP_FORWARD,
-                    Command.SKIP_BACKWARD,
-                    Command.SEEK,
-                ],
-                notification: {
-                    showWhenClosed: true,
-                },
-            })
-
-            // Only add listener once to prevent duplicates
-            if (this.mediaControlListenerSetup) {
-                this.mediaControlsEnabled = true
-                return
-            }
-            this.mediaControlListenerSetup = true
-
-            MediaControl.addListener((event) => {
-                console.log('[MediaControl] Event:', event.command)
-
-                // Ignore PLAY events during initialization to prevent auto-play on app open
-                if (this.isInitializing && event.command === Command.PLAY) {
-                    console.log('[MediaControl] Ignoring PLAY during initialization')
-                    return
-                }
-
-                try {
-                    switch (event.command) {
-                        case Command.PLAY:
-                            this.resume()
-                            break
-                        case Command.PAUSE:
-                            this.pause()
-                            break
-                        case Command.NEXT_TRACK:
-                            if (this.onNextTrack) {
-                                this.onNextTrack()
-                            }
-                            break
-                        case Command.PREVIOUS_TRACK:
-                            if (this.onPreviousTrack) {
-                                this.onPreviousTrack()
-                            }
-                            break
-                        case Command.STOP:
-                            this.stop()
-                            this.hideNotification()
-                            break
-                        case Command.SKIP_FORWARD:
-                            this.seekTo(Math.min(this.getCurrentTime() + 15, this.getDuration()))
-                            break
-                        case Command.SKIP_BACKWARD:
-                            this.seekTo(Math.max(this.getCurrentTime() - 15, 0))
-                            break
-                        case Command.SEEK:
-                            if (event.data?.position !== undefined) {
-                                this.seekTo(event.data.position)
-                            }
-                            break
-                    }
-                } catch (error) {
-                    // Player may be released (e.g., offline with no downloaded track)
-                    console.warn('[MediaControl] Failed to handle event:', event.command, error)
-                }
-            })
-
-            this.mediaControlsEnabled = true
-            console.log('[MediaControl] Enabled')
-        } catch (error) {
-            console.error('[MediaControl] Failed to enable:', error)
-        }
-    }
-
-    async updateMediaMetadata(metadata: {
-        title?: string
-        artist?: string
-        artworkUrl?: string
-        duration?: number
-    }) {
-        // Store for re-applying after showNotification()
-        this.lastMetadata = metadata
-
-        if (!this.mediaControlsEnabled) return
-
-        try {
-            const mediaMetadata = {
-                title: metadata.title,
-                artist: metadata.artist,
-                duration: metadata.duration,
-                ...(metadata.artworkUrl && {
-                    artwork: { uri: metadata.artworkUrl }
-                })
-            }
-            await MediaControl.updateMetadata(mediaMetadata)
-        } catch (error) {
-            console.error('[MediaControl] Failed to update metadata:', error)
-        }
-    }
-
-    async updatePlaybackState(playing: boolean, position?: number) {
-        if (!this.mediaControlsEnabled) return
-
-        try {
-            await MediaControl.updatePlaybackState(
-                playing ? PlaybackState.PLAYING : PlaybackState.PAUSED,
-                position ?? this.getCurrentTime(),
-                playing ? 1.0 : 0.0
-            )
-        } catch (error) {
-            console.error('[MediaControl] Failed to update state:', error)
-        }
-    }
-
-    async hideNotification() {
-        if (!this.mediaControlsEnabled) return
-
-        try {
-            await MediaControl.disableMediaControls()
-            this.mediaControlsEnabled = false
-            console.log('[MediaControl] Disabled/hidden')
-        } catch (error) {
-            console.error('[MediaControl] Failed to disable:', error)
-        }
-    }
-
-    async showNotification() {
-        if (this.mediaControlsEnabled) return
-        await this.setupMediaControls()
-
-        // Re-apply last metadata after re-enabling controls
-        if (this.lastMetadata) {
-            await this.updateMediaMetadata(this.lastMetadata)
-        }
-    }
-
-    setOnPlaybackFinish(callback: () => void) {
-        this.onPlaybackFinish = callback
-    }
-
-    setOnNextTrack(callback: () => void) {
-        this.onNextTrack = callback
-    }
-
-    setOnPreviousTrack(callback: () => void) {
-        this.onPreviousTrack = callback
-    }
-
     async play(audioSource: string) {
         if (!this.player) throw new Error('Player not initialized')
-
-        // Re-enable notification if it was hidden
-        await this.showNotification()
 
         try {
             this.player.replace(audioSource)
@@ -242,7 +48,7 @@ class AudioService {
             this.player.play()
         } catch (error) {
             console.warn('[AudioService] play() failed:', error)
-            throw error // Re-throw so caller knows playback failed
+            throw error
         }
     }
 
@@ -278,7 +84,7 @@ class AudioService {
         }
     }
 
-    getPlaying() {
+    getPlaying(): boolean {
         try {
             return this.player?.playing ?? false
         } catch {
@@ -286,7 +92,7 @@ class AudioService {
         }
     }
 
-    getCurrentTime() {
+    getCurrentTime(): number {
         try {
             return this.player?.currentTime ?? 0
         } catch {
@@ -294,7 +100,7 @@ class AudioService {
         }
     }
 
-    getDuration() {
+    getDuration(): number {
         try {
             return this.player?.duration ?? 0
         } catch {
@@ -307,28 +113,82 @@ class AudioService {
     }
 
     // ==========================================================================
-    // Sleep Timer Methods
+    // Sleep Timer
     // ==========================================================================
     private sleepTimerEndTime: number | null = null
-    private sleepTimerCallback: (() => void) | null = null
+    private sleepTimerId: number | null = null
+    private fadeIntervalId: number | null = null
+    private onTimerComplete: (() => void) | null = null
 
-    setSleepTimer(minutes: number, callback: () => void) {
-        const endTime = Date.now() + (minutes * 60 * 1000)
-        this.sleepTimerEndTime = endTime
-        this.sleepTimerCallback = callback
+    setSleepTimer(minutes: number, onComplete?: () => void) {
+        // Clear any existing timer first
+        this.clearSleepTimer()
 
-        // Use BackgroundTimer so it works when screen is off
-        BackgroundTimer.setTimeout(() => {
-            if (this.sleepTimerCallback) {
-                this.sleepTimerCallback()
-                this.clearSleepTimer()
+        const durationMs = minutes * 60 * 1000
+        this.sleepTimerEndTime = Date.now() + durationMs
+        this.onTimerComplete = onComplete ?? null
+
+        this.sleepTimerId = BackgroundTimer.setTimeout(() => {
+            this.handleTimerExpired()
+        }, durationMs)
+    }
+
+    private handleTimerExpired() {
+        // Fade out over 5 seconds then pause
+        this.fadeOutAndPause(5000)
+    }
+
+    private fadeOutAndPause(durationMs: number) {
+        if (!this.player) {
+            this.finishTimer()
+            return
+        }
+
+        const steps = 20
+        const stepMs = durationMs / steps
+        const volumeStep = 1 / steps
+        let currentVolume = 1
+
+        // Use BackgroundTimer for fade to work when screen is off
+        this.fadeIntervalId = BackgroundTimer.setInterval(() => {
+            currentVolume -= volumeStep
+            if (currentVolume <= 0) {
+                this.player?.pause()
+                this.player!.volume = 1 // Reset volume for next playback
+                if (this.fadeIntervalId !== null) {
+                    BackgroundTimer.clearInterval(this.fadeIntervalId)
+                    this.fadeIntervalId = null
+                }
+                this.finishTimer()
+            } else {
+                this.player!.volume = currentVolume
             }
-        }, minutes * 60 * 1000)
+        }, stepMs)
+    }
+
+    private finishTimer() {
+        const callback = this.onTimerComplete
+        this.sleepTimerEndTime = null
+        this.sleepTimerId = null
+        this.onTimerComplete = null
+        callback?.()
     }
 
     clearSleepTimer() {
+        if (this.sleepTimerId !== null) {
+            BackgroundTimer.clearTimeout(this.sleepTimerId)
+            this.sleepTimerId = null
+        }
+        if (this.fadeIntervalId !== null) {
+            BackgroundTimer.clearInterval(this.fadeIntervalId)
+            this.fadeIntervalId = null
+        }
+        // Reset volume in case we cancelled during fade
+        if (this.player) {
+            this.player.volume = 1
+        }
         this.sleepTimerEndTime = null
-        this.sleepTimerCallback = null
+        this.onTimerComplete = null
     }
 
     isSleepTimerActive(): boolean {
@@ -339,16 +199,9 @@ class AudioService {
         return this.sleepTimerEndTime
     }
 
-    resetVolume() {
-        // Volume control not available in expo-audio, this is a no-op
-        // Volume is controlled at system level
-    }
-
-    async fadeOut(duration: number) {
-        // expo-audio doesn't support programmatic volume control
-        // This is implemented by reducing volume over time
-        // For now, just pause
-        this.pause()
+    getSleepTimerRemaining(): number {
+        if (!this.sleepTimerEndTime) return 0
+        return Math.max(0, Math.floor((this.sleepTimerEndTime - Date.now()) / 1000))
     }
 }
 
