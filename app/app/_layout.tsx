@@ -46,8 +46,8 @@ function AppContent() {
                                 }}
                             >
                                 <Stack.Screen name="index" />
-                                <Stack.Screen name="player" options={{ unsafe: true }} />
-                                <Stack.Screen name="reciter/[id]" options={{ unsafe: true }} />
+                                <Stack.Screen name="player" />
+                                <Stack.Screen name="reciter/[id]" />
                                 <Stack.Screen name="settings" />
                                 <Stack.Screen name="about" />
                             </Stack>
