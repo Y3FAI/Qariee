@@ -14,7 +14,7 @@ import Animated, {
     withSequence,
     runOnJS,
 } from "react-native-reanimated"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
@@ -173,7 +173,10 @@ export default function PlayerScreen() {
     const insets = useSafeAreaInsets()
 
     // Calculate layout dynamically based on actual safe area insets
-    const layout = calculateLayout(insets.top, insets.bottom)
+    const layout = useMemo(
+        () => calculateLayout(insets.top, insets.bottom),
+        [insets.top, insets.bottom]
+    )
     const {
         currentTrack,
         isPlaying,

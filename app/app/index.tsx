@@ -28,8 +28,8 @@ import { useTheme } from '../src/contexts/ThemeContext';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
-// Static dark gradient - bright purple fading to dark
-const GRADIENT_COLORS = ['#4a2c6a', '#2a1a3d', '#121212'] as const;
+// Static dark gradient - subtle purple tint fading to dark
+const GRADIENT_COLORS = ['#251a30', '#1a1520', '#121212'] as const;
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();

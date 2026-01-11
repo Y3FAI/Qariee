@@ -194,19 +194,11 @@ export function useMediaControl({
         setup()
     }, [hide])
 
-    // Update playback state periodically when playing
+    // Update playback state immediately on play/pause changes
+    // Periodic updates are handled by AudioContext's consolidated interval
     useEffect(() => {
         if (!currentTrack) return
-
         updatePlaybackState(isPlaying)
-
-        if (!isPlaying) return
-
-        const interval = BackgroundTimer.setInterval(() => {
-            updatePlaybackState(true)
-        }, 1000)
-
-        return () => BackgroundTimer.clearInterval(interval)
     }, [currentTrack, isPlaying, updatePlaybackState])
 
     // Update metadata when track changes
@@ -229,5 +221,6 @@ export function useMediaControl({
         show,
         hide,
         markInitialized,
+        updatePlaybackState,
     }
 }

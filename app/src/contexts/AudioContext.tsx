@@ -6,6 +6,7 @@ import {
     useRef,
     useEffect,
     useCallback,
+    useMemo,
 } from "react"
 import { AppState, AppStateStatus } from "react-native"
 import BackgroundTimer from "react-native-background-timer"
@@ -194,7 +195,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     // ==========================================================================
     // MediaControl Hook
     // ==========================================================================
-    const { show: showMediaControl, markInitialized } = useMediaControl({
+    const { show: showMediaControl, markInitialized, updatePlaybackState } = useMediaControl({
         currentTrack,
         isPlaying,
         duration,
@@ -453,10 +454,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
             audioStorage.saveListeningSession(
                 buildSessionData(currentTrack, audioService.getCurrentTime(), audioService.getDuration())
             )
-        }, 1000)
+            updatePlaybackState(true)
+        }, 5000)
 
         return () => BackgroundTimer.clearInterval(interval)
-    }, [currentTrack, isPlaying, buildSessionData])
+    }, [currentTrack, isPlaying, buildSessionData, updatePlaybackState])
 
     useEffect(() => {
         if (!isPlaying && currentTrack && duration > 0 && sessionLoadedRef.current) {
@@ -499,24 +501,38 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     // ==========================================================================
     // Context value
     // ==========================================================================
+    const contextValue = useMemo(
+        () => ({
+            currentTrack,
+            setCurrentTrack,
+            isPlaying,
+            setIsPlaying,
+            position,
+            duration,
+            playbackMode,
+            setPlaybackMode,
+            playTrack,
+            togglePlayPause,
+            seekTo,
+            playNext,
+            playPrevious,
+        }),
+        [
+            currentTrack,
+            isPlaying,
+            position,
+            duration,
+            playbackMode,
+            playTrack,
+            togglePlayPause,
+            seekTo,
+            playNext,
+            playPrevious,
+        ]
+    )
+
     return (
-        <AudioContext.Provider
-            value={{
-                currentTrack,
-                setCurrentTrack,
-                isPlaying,
-                setIsPlaying,
-                position,
-                duration,
-                playbackMode,
-                setPlaybackMode,
-                playTrack,
-                togglePlayPause,
-                seekTo,
-                playNext,
-                playPrevious,
-            }}
-        >
+        <AudioContext.Provider value={contextValue}>
             {children}
         </AudioContext.Provider>
     )

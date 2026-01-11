@@ -12,112 +12,112 @@
             "id": "hussary",
             "name_en": "Mahmoud Khalil Al-Hussary",
             "name_ar": "محمود الحصري",
-            "color_primary": "#4A90E2",
-            "color_secondary": "#8CB4FF",
+            "color_primary": "#1a3a4a",
+            "color_secondary": "#2a5060",
             "sort_order": 1
         },
         {
             "id": "mishary-alafasy",
             "name_en": "Mishary Alafasy",
             "name_ar": "مشاري العفاسي",
-            "color_primary": "#E8E8E8",
-            "color_secondary": "#F5F5F5",
+            "color_primary": "#2a2a35",
+            "color_secondary": "#3a3a48",
             "sort_order": 10
         },
         {
             "id": "sudais",
             "name_en": "Abdur-Rahman As-Sudais",
             "name_ar": "عبد الرحمن السديس",
-            "color_primary": "#FFE66D",
-            "color_secondary": "#FFF4A3",
+            "color_primary": "#3a3520",
+            "color_secondary": "#4a4530",
             "sort_order": 9
         },
         {
             "id": "abdul-basit",
             "name_en": "Abdul Basit Abdul Samad",
             "name_ar": "عبد الباسط عبد الصمد",
-            "color_primary": "#FF6B6B",
-            "color_secondary": "#FFA5A5",
+            "color_primary": "#3a2028",
+            "color_secondary": "#4a3038",
             "sort_order": 4
         },
         {
             "id": "maher",
             "name_en": "Maher Al-Muaiqly",
             "name_ar": "ماهر المعيقلي",
-            "color_primary": "#4A90E2",
-            "color_secondary": "#8CB4FF",
+            "color_primary": "#1a3530",
+            "color_secondary": "#2a4540",
             "sort_order": 5
         },
         {
             "id": "al-juhany",
             "name_en": "Abdullah Al Juhany",
             "name_ar": "عبد الله الجهني",
-            "color_primary": "#4A90E2",
-            "color_secondary": "#8CB4FF",
+            "color_primary": "#2a1a3a",
+            "color_secondary": "#3a2a4a",
             "sort_order": 6
         },
         {
             "id": "al-shuraim",
             "name_en": "Saud Al-Shuraim",
             "name_ar": "سعود الشريم",
-            "color_primary": "#3498DB",
-            "color_secondary": "#7FB3D5",
+            "color_primary": "#1a2a3a",
+            "color_secondary": "#2a3a4a",
             "sort_order": 7
         },
         {
             "id": "ayoub",
             "name_en": "Mohamed Ayoub",
             "name_ar": "محمد أيوب",
-            "color_primary": "#FF9800",
-            "color_secondary": "#FFCC80",
+            "color_primary": "#3a2a1a",
+            "color_secondary": "#4a3a2a",
             "sort_order": 4
         },
         {
             "id": "minshawi",
             "name_en": "Muhammad Siddiq Al Minshawi",
             "name_ar": "محمد المنشاوي",
-            "color_primary": "#795548",
-            "color_secondary": "#BCAAA4",
+            "color_primary": "#2a2520",
+            "color_secondary": "#3a3530",
             "sort_order": 9
         },
         {
             "id": "jaber",
             "name_en": "Ali Jaber",
             "name_ar": "علي جابر",
-            "color_primary": "#9C27B0",
-            "color_secondary": "#CE93D8",
+            "color_primary": "#301a35",
+            "color_secondary": "#402a45",
             "sort_order": 4
         },
         {
             "id": "khayat",
             "name_en": "Abdullah Al-Khayat",
             "name_ar": "عبد الله خياط",
-            "color_primary": "#E91E63",
-            "color_secondary": "#F8BBD0",
+            "color_primary": "#351a28",
+            "color_secondary": "#452a38",
             "sort_order": 2
         },
         {
             "id": "al-dawsari",
             "name_en": "Yasir al-Dawsari",
             "name_ar": "ياسر الدوسري",
-            "color_primary": "#4A90E2",
-            "color_secondary": "#8CB4FF",
+            "color_primary": "#1a3038",
+            "color_secondary": "#2a4048",
             "sort_order": 12
         },
         {
             "id": "al-turki",
             "name_en": "Badr Al-Turki",
             "name_ar": "بدر التركي",
-            "color_primary": "#4A90E2",
-            "color_secondary": "#8CB4FF",
+            "color_primary": "#203a30",
+            "color_secondary": "#304a40",
             "sort_order": 13
         },
         {
             "id": "ali-al-hudhayfi",
             "name_en": "Ali al-Hudhayfi",
             "name_ar": "علي الحذيفي",
-            "color_primary": "#E67E22",
-            "color_secondary": "#F5A962",
+            "color_primary": "#352818",
+            "color_secondary": "#453828",
             "sort_order": 14
         }
     ]
