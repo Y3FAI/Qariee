@@ -61,11 +61,24 @@ function AppContent() {
                         <Stack
                             screenOptions={{
                                 headerShown: false,
+                                animation: "fade",
                             }}
                         >
                             <Stack.Screen name="index" />
-                            <Stack.Screen name="player" />
-                            <Stack.Screen name="reciter/[id]" />
+                            <Stack.Screen
+                                name="player"
+                                options={{
+                                    animation: "fade",
+                                    animationDuration: 200,
+                                }}
+                            />
+                            <Stack.Screen
+                                name="reciter/[id]"
+                                options={{
+                                    animation: "fade",
+                                    animationDuration: 200,
+                                }}
+                            />
                             <Stack.Screen name="settings" />
                             <Stack.Screen name="about" />
                         </Stack>

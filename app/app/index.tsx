@@ -10,6 +10,7 @@ import {
   BackHandler,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -27,31 +28,18 @@ import { useTheme } from '../src/contexts/ThemeContext';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
-// Pre-defined dark gradients - beautiful, noticeable tints
-const SUBTLE_GRADIENTS = [
-  ['#3a3a55', '#303045', '#262635', '#121212'], // Blue tint
-  ['#3a3a3a', '#303030', '#262626', '#121212'], // Pure dark tint
-  ['#553a3a', '#453030', '#352626', '#121212'], // Red tint
-  ['#3a553a', '#304530', '#263526', '#121212'], // Green tint
-  ['#453a55', '#383045', '#2e2635', '#121212'], // Purple tint
-];
-
-/**
- * Pick a random subtle gradient on app load
- */
-const pickRandomGradient = (): readonly [string, string, string, string] => {
-  return SUBTLE_GRADIENTS[Math.floor(Math.random() * SUBTLE_GRADIENTS.length)] as unknown as readonly [string, string, string, string];
-};
+// Static dark gradient - elegant warm tint fading to pure dark
+const GRADIENT_COLORS = ['#1a1a1a', '#151515', '#121212'] as const;
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { setColors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [loading, setLoading] = useState(true);
   const arabic = isArabic();
   const backPressedOnce = useRef(false);
-  const [gradientColors] = useState(() => pickRandomGradient());
 
   useEffect(() => {
     loadReciters();
@@ -160,7 +148,7 @@ export default function HomeScreen() {
       locations={[0, 0.3, 0.7, 1]}
       style={styles.container}
     >
-      <View style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <OfflineIndicator />
         <FlatList
           data={reciters}

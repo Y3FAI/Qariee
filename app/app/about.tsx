@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking, BackHandler, I18nManager } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 
 export default function About() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const arabic = isArabic();
   const isRTL = arabic || I18nManager.isRTL;
 
@@ -26,7 +27,7 @@ export default function About() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -128,7 +129,7 @@ export default function About() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

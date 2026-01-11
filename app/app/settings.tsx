@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, BackHandler } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,7 @@ import { getFontFamily } from '../src/utils/fonts';
 
 export default function Settings() {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const arabic = isArabic();
   const rtl = isRTL();
   const [currentLang, setCurrentLang] = useState<'ar' | 'en'>(getCurrentLanguage());
@@ -30,7 +31,7 @@ export default function Settings() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -113,7 +114,7 @@ export default function Settings() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

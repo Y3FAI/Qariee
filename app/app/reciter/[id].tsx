@@ -12,7 +12,7 @@ import {
 } from "react-native"
 import { Image } from "expo-image"
 import { useLocalSearchParams, useRouter } from "expo-router"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
@@ -44,6 +44,7 @@ export default function ReciterDetailScreen() {
     const router = useRouter()
     const { t } = useTranslation()
     const { setColors } = useTheme()
+    const insets = useSafeAreaInsets()
     const { playTrack, playbackMode } = useAudio()
     const {
         downloadSurah,
@@ -395,11 +396,11 @@ export default function ReciterDetailScreen() {
 
     if (!reciter) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={[styles.container, { paddingTop: insets.top }]}>
                 <View style={styles.centerContainer}>
                     <Text style={styles.loadingText}>{t("loading")}</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         )
     }
 
@@ -408,7 +409,7 @@ export default function ReciterDetailScreen() {
     )
 
     return (
-        <SafeAreaView style={styles.container} edges={[]}>
+        <View style={styles.container}>
             <ScrollView showsVerticalScrollIndicator={false}>
                 <LinearGradient
                     colors={[
@@ -417,11 +418,11 @@ export default function ReciterDetailScreen() {
                         hexToRgba(reciter.color_secondary, 0.2),
                         "#121212",
                     ]}
-                    style={styles.header}
+                    style={[styles.header, { paddingTop: insets.top + 40 }]}
                 >
                     {/* Back Button inside header */}
                     <TouchableOpacity
-                        style={styles.backButton}
+                        style={[styles.backButton, { top: insets.top + 10 }]}
                         onPress={() => router.replace("/")}
                         activeOpacity={0.7}
                     >
@@ -561,7 +562,7 @@ export default function ReciterDetailScreen() {
                 </View>
             </ScrollView>
             <MiniPlayer />
-        </SafeAreaView>
+        </View>
     )
 }
 
@@ -593,7 +594,7 @@ const styles = StyleSheet.create({
     },
     header: {
         alignItems: "center",
-        paddingTop: 80,
+        // paddingTop is now applied dynamically based on insets
         paddingBottom: 40,
         paddingHorizontal: 20,
     },

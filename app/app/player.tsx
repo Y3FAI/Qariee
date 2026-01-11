@@ -8,7 +8,7 @@ import {
     Alert,
 } from "react-native"
 import { useState, useEffect, useRef } from "react"
-import { SafeAreaView } from "react-native-safe-area-context"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
 import { Ionicons } from "@expo/vector-icons"
@@ -38,29 +38,26 @@ const { width, height } = Dimensions.get("window")
 // ===========================
 
 /**
- * Calculate responsive layout dimensions based on screen size
+ * Calculate responsive layout dimensions based on screen size and safe area insets
  *
  * This function ensures the player UI adapts to different device screens by:
- * 1. Calculating available vertical space after accounting for fixed elements
+ * 1. Calculating available vertical space after accounting for fixed elements and insets
  * 2. Sizing the artwork to fit within available space (max 50% of vertical space)
  * 3. Distributing remaining space proportionally for margins
  * 4. Scaling down fonts on smaller screens (< 700px height)
  * 5. Using flexbox (justifyContent: center) to vertically center content
  *
- * This prevents UI clipping on small Android phones while properly utilizing
- * space on larger screens without leaving empty gaps at the bottom.
+ * Now accepts safe area insets for dynamic calculation during render.
  */
-const calculateLayout = () => {
-    // Estimate space used by fixed elements
-    const SAFE_AREA_ESTIMATE = 100 // SafeAreaView top + bottom
+const calculateLayout = (insetTop: number = 0, insetBottom: number = 0) => {
+    // Use actual insets instead of estimate
+    const SAFE_AREA_TOTAL = insetTop + insetBottom
     const SLIDER_AREA = 60 // Slider height
     const TIME_DISPLAY = 20 // Time text area
     const SIDE_CONTROLS = 50 // Side controls row
     const PLAY_BUTTON_AREA = 140 // Play button + skip buttons
-    // Note: We add bottom margin visually in styles, but don't count it here
-    // to keep more space available for artwork
     const FIXED_ELEMENTS_HEIGHT =
-        SAFE_AREA_ESTIMATE +
+        SAFE_AREA_TOTAL +
         SLIDER_AREA +
         TIME_DISPLAY +
         SIDE_CONTROLS +
@@ -70,11 +67,9 @@ const calculateLayout = () => {
     const AVAILABLE_VERTICAL_SPACE = height - FIXED_ELEMENTS_HEIGHT
 
     // Calculate optimal photo size based on screen size
-    // For large screens (tablets/emulators), we can use more space
-    // For small screens (phones), we need to be conservative
     const PHOTO_SIZE_FROM_WIDTH = width * 0.75
     const isLargeScreen = height > 800
-    const MAX_HEIGHT_RATIO = isLargeScreen ? 0.6 : 0.5 // 60% for large screens, 50% for small
+    const MAX_HEIGHT_RATIO = isLargeScreen ? 0.6 : 0.5
     const MAX_PHOTO_SIZE_FROM_HEIGHT =
         AVAILABLE_VERTICAL_SPACE * MAX_HEIGHT_RATIO
     const PHOTO_SIZE = Math.min(
@@ -84,15 +79,12 @@ const calculateLayout = () => {
     )
 
     // Calculate responsive margins based on available space
-    // Note: We use flexbox centering for vertical layout, so top margins are minimal
-    const REMAINING_SPACE = AVAILABLE_VERTICAL_SPACE - PHOTO_SIZE - 100 // 100 for info text
+    const REMAINING_SPACE = AVAILABLE_VERTICAL_SPACE - PHOTO_SIZE - 100
 
     // Scale margins based on screen size
-    // Artwork bottom margin: slightly decreased for tighter spacing with info
     const ARTWORK_BOTTOM_MARGIN = isLargeScreen
         ? Math.max(12, Math.min(24, REMAINING_SPACE * 0.14))
         : Math.max(6, Math.min(18, REMAINING_SPACE * 0.12))
-    // Info bottom margin: slightly increased for more breathing room before slider
     const INFO_BOTTOM_MARGIN = isLargeScreen
         ? Math.max(16, Math.min(36, REMAINING_SPACE * 0.2))
         : Math.max(12, Math.min(30, REMAINING_SPACE * 0.18))
@@ -108,9 +100,9 @@ const calculateLayout = () => {
     const RECITER_NAME_SIZE = height < 700 ? 16 : 18
 
     // Dynamic spacing values based on screen height
-    const TOP_BUTTON_POSITION = isLargeScreen ? 50 : 40 // Position of back/share buttons
-    const CONTENT_TOP_PADDING = TOP_BUTTON_POSITION + 50 // Button position + button height + spacing
-    const CONTROLS_BOTTOM_MARGIN = isLargeScreen ? 32 : 24 // Bottom spacing for play controls
+    const TOP_BUTTON_POSITION = isLargeScreen ? 50 : 40
+    const CONTENT_TOP_PADDING = TOP_BUTTON_POSITION + 50
+    const CONTROLS_BOTTOM_MARGIN = isLargeScreen ? 32 : 24
 
     return {
         PHOTO_SIZE,
@@ -123,25 +115,19 @@ const calculateLayout = () => {
         TOP_BUTTON_POSITION,
         CONTENT_TOP_PADDING,
         CONTROLS_BOTTOM_MARGIN,
+        isLargeScreen,
     }
 }
 
-const layout = calculateLayout()
+// Default layout for static style values (will be overridden by dynamic calculation)
+const defaultLayout = calculateLayout(50, 34)
 
 // ===========================
 // UI CONFIGURATION KNOBS
 // ===========================
 
-// Layout & Sizing (Responsive)
-const PHOTO_SIZE = layout.PHOTO_SIZE
+// Layout & Sizing (using defaults, dynamic values calculated in component)
 const PHOTO_BORDER_RADIUS = 16
-const ARTWORK_BOTTOM_MARGIN = layout.ARTWORK_BOTTOM_MARGIN
-const INFO_BOTTOM_MARGIN = layout.INFO_BOTTOM_MARGIN
-const SIDE_CONTROLS_MARGIN = layout.SIDE_CONTROLS_MARGIN
-const CONTROLS_TOP_MARGIN = layout.CONTROLS_TOP_MARGIN
-const TOP_BUTTON_POSITION = layout.TOP_BUTTON_POSITION
-const CONTENT_TOP_PADDING = layout.CONTENT_TOP_PADDING
-const CONTROLS_BOTTOM_MARGIN = layout.CONTROLS_BOTTOM_MARGIN
 
 // Gradient Configuration
 const GRADIENT_PRIMARY_OPACITY = 0.8
@@ -166,9 +152,7 @@ const PLAY_BUTTON_SIZE = 88
 // Spacing & Margins
 const SCREEN_HORIZONTAL_PADDING = 5
 
-// Typography & Colors (Responsive)
-const SURAH_NAME_SIZE = layout.SURAH_NAME_SIZE
-const RECITER_NAME_SIZE = layout.RECITER_NAME_SIZE
+// Typography & Colors
 const TIME_TEXT_SIZE = 12
 const RECITER_NAME_OPACITY = 0.7
 const TIME_TEXT_OPACITY = 0.6
@@ -179,6 +163,10 @@ export default function PlayerScreen() {
     const router = useRouter()
     const { t } = useTranslation()
     const { setColors } = useTheme()
+    const insets = useSafeAreaInsets()
+
+    // Calculate layout dynamically based on actual safe area insets
+    const layout = calculateLayout(insets.top, insets.bottom)
     const {
         currentTrack,
         isPlaying,
@@ -333,11 +321,11 @@ export default function PlayerScreen() {
 
     if (!currentTrack) {
         return (
-            <SafeAreaView style={styles.container}>
+            <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>No track playing</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         )
     }
 
@@ -390,10 +378,10 @@ export default function PlayerScreen() {
             locations={GRADIENT_LOCATIONS}
             style={styles.container}
         >
-            <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
+            <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
                 {/* Back Button - Always on left */}
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={[styles.backButton, { top: insets.top + layout.TOP_BUTTON_POSITION - 40 }]}
                     onPress={() => {
                         // Always go to reciter page
                         if (currentTrack) {
@@ -413,14 +401,14 @@ export default function PlayerScreen() {
                 {/* Content Container - uses flex: 1 with justifyContent: center
                     to vertically center artwork and info, utilizing all available
                     space and preventing empty gaps at bottom */}
-                <View style={styles.contentContainer}>
+                <View style={[styles.contentContainer, { paddingTop: layout.CONTENT_TOP_PADDING }]}>
                     {/* Album Art */}
-                    <View style={styles.artworkContainer}>
+                    <View style={[styles.artworkContainer, { marginBottom: layout.ARTWORK_BOTTOM_MARGIN }]}>
                         <Image
                             source={{
                                 uri: getReciterPhotoUrl(currentTrack.reciterId),
                             }}
-                            style={styles.artwork}
+                            style={[styles.artwork, { width: layout.PHOTO_SIZE, height: layout.PHOTO_SIZE }]}
                             placeholder={require('../assets/images/placeholder.png')}
                             placeholderContentFit="cover"
                             contentFit="cover"
@@ -429,18 +417,18 @@ export default function PlayerScreen() {
                     </View>
 
                     {/* Track Info */}
-                    <View style={styles.infoContainer}>
+                    <View style={[styles.infoContainer, { marginBottom: layout.INFO_BOTTOM_MARGIN }]}>
                         <SurahName
                             surahNumber={currentTrack.surahNumber}
                             fallbackName={currentTrack.surahName}
-                            fontSize={SURAH_NAME_SIZE}
+                            fontSize={layout.SURAH_NAME_SIZE}
                             style={styles.surahName}
                             numberOfLines={1}
                         />
                         <Text
                             style={[
                                 styles.reciterName,
-                                { fontFamily: getFontFamily(arabic, "medium") },
+                                { fontFamily: getFontFamily(arabic, "medium"), fontSize: layout.RECITER_NAME_SIZE },
                             ]}
                             numberOfLines={1}
                         >
@@ -483,7 +471,7 @@ export default function PlayerScreen() {
                     </View>
 
                     {/* Side Controls (Playback Mode, Sleep Timer & Download) */}
-                    <View style={styles.sideControlsRow}>
+                    <View style={[styles.sideControlsRow, { marginTop: layout.SIDE_CONTROLS_MARGIN }]}>
                         <TouchableOpacity
                             onPress={() => {
                                 setPlaybackMode((prev) => {
@@ -569,6 +557,7 @@ export default function PlayerScreen() {
                 <View
                     style={[
                         styles.mainControlsRow,
+                        { marginTop: layout.CONTROLS_TOP_MARGIN, marginBottom: layout.CONTROLS_BOTTOM_MARGIN },
                         rtl && styles.mainControlsRowRTL,
                     ]}
                 >
@@ -632,7 +621,7 @@ export default function PlayerScreen() {
                     visible={sleepTimerModalVisible}
                     onClose={() => setSleepTimerModalVisible(false)}
                 />
-            </SafeAreaView>
+            </View>
         </LinearGradient>
     )
 }
@@ -649,7 +638,7 @@ const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
         justifyContent: "center",
-        paddingTop: CONTENT_TOP_PADDING, // Dynamic padding based on button position
+        // paddingTop is now applied dynamically
     },
     centerContainer: {
         flex: 1,
@@ -662,7 +651,7 @@ const styles = StyleSheet.create({
     },
     backButton: {
         position: "absolute",
-        top: TOP_BUTTON_POSITION,
+        // top is now applied dynamically based on insets
         left: 20,
         zIndex: 10,
         width: 40,
@@ -675,26 +664,26 @@ const styles = StyleSheet.create({
     },
     artworkContainer: {
         alignItems: "center",
-        marginBottom: ARTWORK_BOTTOM_MARGIN,
+        marginBottom: defaultLayout.ARTWORK_BOTTOM_MARGIN,
     },
     artwork: {
-        width: PHOTO_SIZE,
-        height: PHOTO_SIZE,
+        width: defaultLayout.PHOTO_SIZE,
+        height: defaultLayout.PHOTO_SIZE,
         borderRadius: PHOTO_BORDER_RADIUS,
         backgroundColor: "#282828",
     },
     infoContainer: {
         alignItems: "center",
-        marginBottom: INFO_BOTTOM_MARGIN,
+        marginBottom: defaultLayout.INFO_BOTTOM_MARGIN,
     },
     surahName: {
-        fontSize: SURAH_NAME_SIZE,
+        fontSize: defaultLayout.SURAH_NAME_SIZE,
         color: "#efefd5",
         marginBottom: 5,
         textAlign: "center",
     },
     reciterName: {
-        fontSize: RECITER_NAME_SIZE,
+        fontSize: defaultLayout.RECITER_NAME_SIZE,
         color: `rgba(255, 255, 255, ${RECITER_NAME_OPACITY})`,
         textAlign: "center",
     },
@@ -722,15 +711,15 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
-        marginTop: SIDE_CONTROLS_MARGIN,
+        marginTop: defaultLayout.SIDE_CONTROLS_MARGIN,
         paddingHorizontal: SLIDER_TIME_PADDING,
     },
     mainControlsRow: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginTop: CONTROLS_TOP_MARGIN,
-        marginBottom: CONTROLS_BOTTOM_MARGIN, // Dynamic bottom margin based on screen size
+        marginTop: defaultLayout.CONTROLS_TOP_MARGIN,
+        marginBottom: defaultLayout.CONTROLS_BOTTOM_MARGIN,
     },
     mainControlsRowRTL: {
         flexDirection: "row-reverse",
