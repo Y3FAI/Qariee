@@ -48,5 +48,8 @@
   "thank_you": "شكراً لاستخدامك تطبيق قارئي",
   "language": "اللغة",
   "english": "English",
-  "arabic": "العربية"
+  "arabic": "العربية",
+  "mode_sequential": "تتابعي",
+  "mode_shuffle": "عشوائي",
+  "mode_repeat": "تكرار"
 }

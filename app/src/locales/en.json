@@ -48,5 +48,8 @@
   "thank_you": "Thank you for using Qariee",
   "language": "Language",
   "english": "English",
-  "arabic": "Arabic"
+  "arabic": "Arabic",
+  "mode_sequential": "Sequential",
+  "mode_shuffle": "Shuffle",
+  "mode_repeat": "Repeat"
 }

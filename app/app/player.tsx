@@ -7,7 +7,14 @@ import {
     BackHandler,
     Alert,
 } from "react-native"
-import { useState, useEffect, useRef } from "react"
+import Animated, {
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
+    withSequence,
+    runOnJS,
+} from "react-native-reanimated"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Image } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
@@ -196,6 +203,32 @@ export default function PlayerScreen() {
 
     // Sleep timer modal state
     const [sleepTimerModalVisible, setSleepTimerModalVisible] = useState(false)
+
+    // Tooltip state
+    const [tooltipText, setTooltipText] = useState("")
+    const [tooltipPosition, setTooltipPosition] = useState<"left" | "right">("left")
+    const tooltipOpacity = useSharedValue(0)
+    const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const showTooltip = useCallback((text: string, position: "left" | "right") => {
+        if (tooltipTimeoutRef.current) {
+            clearTimeout(tooltipTimeoutRef.current)
+        }
+        setTooltipText(text)
+        setTooltipPosition(position)
+        tooltipOpacity.value = withSequence(
+            withTiming(1, { duration: 150 }),
+            withTiming(1, { duration: 1000 }),
+            withTiming(0, { duration: 300 })
+        )
+        tooltipTimeoutRef.current = setTimeout(() => {
+            setTooltipText("")
+        }, 1450)
+    }, [tooltipOpacity])
+
+    const tooltipAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: tooltipOpacity.value,
+    }))
 
     // Update theme colors when current track changes
     useEffect(() => {
@@ -475,9 +508,10 @@ export default function PlayerScreen() {
                         <TouchableOpacity
                             onPress={() => {
                                 setPlaybackMode((prev) => {
-                                    if (prev === "sequential") return "shuffle"
-                                    if (prev === "shuffle") return "repeat"
-                                    return "sequential"
+                                    const nextMode = prev === "sequential" ? "shuffle" : prev === "shuffle" ? "repeat" : "sequential"
+                                    const modeKey = `mode_${nextMode}` as const
+                                    showTooltip(t(modeKey), "left")
+                                    return nextMode
                                 })
                             }}
                             hitSlop={{
@@ -490,15 +524,14 @@ export default function PlayerScreen() {
                             <Ionicons
                                 name={
                                     playbackMode === "sequential"
-                                        ? rtl
-                                            ? "play-back"
-                                            : "play-forward"
+                                        ? "play-forward"
                                         : playbackMode === "shuffle"
                                         ? "shuffle"
                                         : "repeat"
                                 }
                                 size={SIDE_BUTTON_SIZE}
                                 color="#efefd5"
+                                style={rtl && { transform: [{ scaleX: -1 }] }}
                             />
                         </TouchableOpacity>
 
@@ -523,7 +556,10 @@ export default function PlayerScreen() {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            onPress={handleDownloadToggle}
+                            onPress={() => {
+                                showTooltip(isDownloaded ? t("downloaded") : t("download"), "right")
+                                handleDownloadToggle()
+                            }}
                             hitSlop={{
                                 top: 15,
                                 bottom: 15,
@@ -551,6 +587,19 @@ export default function PlayerScreen() {
                             )}
                         </TouchableOpacity>
                     </View>
+
+                    {/* Tooltip */}
+                    {tooltipText !== "" && (
+                        <Animated.View style={[
+                            styles.tooltip,
+                            tooltipPosition === "left" ? styles.tooltipLeft : styles.tooltipRight,
+                            tooltipAnimatedStyle
+                        ]}>
+                            <Text style={[styles.tooltipText, { fontFamily: getFontFamily(arabic, "medium") }]}>
+                                {tooltipText}
+                            </Text>
+                        </Animated.View>
+                    )}
                 </View>
 
                 {/* Main Playback Controls */}
@@ -743,5 +792,23 @@ const styles = StyleSheet.create({
     },
     playIconFlip: {
         transform: [{ scaleX: -1 }],
+    },
+    tooltip: {
+        position: "absolute",
+        bottom: -28,
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 6,
+    },
+    tooltipLeft: {
+        left: SLIDER_TIME_PADDING,
+    },
+    tooltipRight: {
+        right: SLIDER_TIME_PADDING,
+    },
+    tooltipText: {
+        color: "#efefd5",
+        fontSize: 13,
     },
 })

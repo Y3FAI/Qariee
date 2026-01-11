@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -28,8 +28,8 @@ import { useTheme } from '../src/contexts/ThemeContext';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
 
-// Static dark gradient - elegant warm tint fading to pure dark
-const GRADIENT_COLORS = ['#1a1a1a', '#151515', '#121212'] as const;
+// Static dark gradient - bright purple fading to dark
+const GRADIENT_COLORS = ['#4a2c6a', '#2a1a3d', '#121212'] as const;
 
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
@@ -48,8 +48,8 @@ export default function HomeScreen() {
   // Set theme colors when screen is focused
   useFocusEffect(
     useCallback(() => {
-      setColors({ statusBar: gradientColors[0], background: '#121212' });
-    }, [gradientColors, setColors])
+      setColors({ statusBar: GRADIENT_COLORS[0], background: '#121212' });
+    }, [setColors])
   );
 
   // Handle Android hardware back button with double-tap to exit
@@ -144,8 +144,8 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient
-      colors={gradientColors}
-      locations={[0, 0.3, 0.7, 1]}
+      colors={GRADIENT_COLORS}
+      locations={[0, 0.4, 1]}
       style={styles.container}
     >
       <View style={[styles.safeArea, { paddingTop: insets.top }]}>
