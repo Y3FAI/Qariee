@@ -175,7 +175,7 @@ export default function PlayerScreen() {
     // Calculate layout dynamically based on actual safe area insets
     const layout = useMemo(
         () => calculateLayout(insets.top, insets.bottom),
-        [insets.top, insets.bottom]
+        [insets.top, insets.bottom],
     )
     const {
         currentTrack,
@@ -209,25 +209,30 @@ export default function PlayerScreen() {
 
     // Tooltip state
     const [tooltipText, setTooltipText] = useState("")
-    const [tooltipPosition, setTooltipPosition] = useState<"left" | "right">("left")
+    const [tooltipPosition, setTooltipPosition] = useState<"left" | "right">(
+        "left",
+    )
     const tooltipOpacity = useSharedValue(0)
     const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const showTooltip = useCallback((text: string, position: "left" | "right") => {
-        if (tooltipTimeoutRef.current) {
-            clearTimeout(tooltipTimeoutRef.current)
-        }
-        setTooltipText(text)
-        setTooltipPosition(position)
-        tooltipOpacity.value = withSequence(
-            withTiming(1, { duration: 150 }),
-            withTiming(1, { duration: 1000 }),
-            withTiming(0, { duration: 300 })
-        )
-        tooltipTimeoutRef.current = setTimeout(() => {
-            setTooltipText("")
-        }, 1450)
-    }, [tooltipOpacity])
+    const showTooltip = useCallback(
+        (text: string, position: "left" | "right") => {
+            if (tooltipTimeoutRef.current) {
+                clearTimeout(tooltipTimeoutRef.current)
+            }
+            setTooltipText(text)
+            setTooltipPosition(position)
+            tooltipOpacity.value = withSequence(
+                withTiming(1, { duration: 150 }),
+                withTiming(1, { duration: 1000 }),
+                withTiming(0, { duration: 300 }),
+            )
+            tooltipTimeoutRef.current = setTimeout(() => {
+                setTooltipText("")
+            }, 1450)
+        },
+        [tooltipOpacity],
+    )
 
     const tooltipAnimatedStyle = useAnimatedStyle(() => ({
         opacity: tooltipOpacity.value,
@@ -237,8 +242,8 @@ export default function PlayerScreen() {
     useEffect(() => {
         if (currentTrack) {
             setColors({
-                statusBar: currentTrack.reciterColorSecondary || '#121212',
-                background: '#121212',
+                statusBar: currentTrack.reciterColorSecondary || "#121212",
+                background: "#121212",
             })
         }
     }, [currentTrack, setColors])
@@ -323,7 +328,10 @@ export default function PlayerScreen() {
                     currentTrack.reciterColorSecondary || "#404040",
                 surahNumber: targetSurah.number,
                 surahName: rtl ? targetSurah.name_ar : targetSurah.name_en,
-                audioUrl: getAudioUrl(currentTrack.reciterId, targetSurah.number),
+                audioUrl: getAudioUrl(
+                    currentTrack.reciterId,
+                    targetSurah.number,
+                ),
                 isDownloaded: isTargetDownloaded,
             }
 
@@ -357,7 +365,12 @@ export default function PlayerScreen() {
 
     if (!currentTrack) {
         return (
-            <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <View
+                style={[
+                    styles.container,
+                    { paddingTop: insets.top, paddingBottom: insets.bottom },
+                ]}
+            >
                 <View style={styles.centerContainer}>
                     <Text style={styles.emptyText}>No track playing</Text>
                 </View>
@@ -414,10 +427,18 @@ export default function PlayerScreen() {
             locations={GRADIENT_LOCATIONS}
             style={styles.container}
         >
-            <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <View
+                style={[
+                    styles.safeArea,
+                    { paddingTop: insets.top, paddingBottom: insets.bottom },
+                ]}
+            >
                 {/* Back Button - Always on left */}
                 <TouchableOpacity
-                    style={[styles.backButton, { top: insets.top + layout.TOP_BUTTON_POSITION - 40 }]}
+                    style={[
+                        styles.backButton,
+                        { top: insets.top + layout.TOP_BUTTON_POSITION - 20 },
+                    ]}
                     onPress={() => {
                         // Always go to reciter page
                         if (currentTrack) {
@@ -437,15 +458,31 @@ export default function PlayerScreen() {
                 {/* Content Container - uses flex: 1 with justifyContent: center
                     to vertically center artwork and info, utilizing all available
                     space and preventing empty gaps at bottom */}
-                <View style={[styles.contentContainer, { paddingTop: layout.CONTENT_TOP_PADDING }]}>
+                <View
+                    style={[
+                        styles.contentContainer,
+                        { paddingTop: layout.CONTENT_TOP_PADDING },
+                    ]}
+                >
                     {/* Album Art */}
-                    <View style={[styles.artworkContainer, { marginBottom: layout.ARTWORK_BOTTOM_MARGIN }]}>
+                    <View
+                        style={[
+                            styles.artworkContainer,
+                            { marginBottom: layout.ARTWORK_BOTTOM_MARGIN },
+                        ]}
+                    >
                         <Image
                             source={{
                                 uri: getReciterPhotoUrl(currentTrack.reciterId),
                             }}
-                            style={[styles.artwork, { width: layout.PHOTO_SIZE, height: layout.PHOTO_SIZE }]}
-                            placeholder={require('../assets/images/placeholder.png')}
+                            style={[
+                                styles.artwork,
+                                {
+                                    width: layout.PHOTO_SIZE,
+                                    height: layout.PHOTO_SIZE,
+                                },
+                            ]}
+                            placeholder={require("../assets/images/placeholder.png")}
                             placeholderContentFit="cover"
                             contentFit="cover"
                             transition={200}
@@ -453,7 +490,12 @@ export default function PlayerScreen() {
                     </View>
 
                     {/* Track Info */}
-                    <View style={[styles.infoContainer, { marginBottom: layout.INFO_BOTTOM_MARGIN }]}>
+                    <View
+                        style={[
+                            styles.infoContainer,
+                            { marginBottom: layout.INFO_BOTTOM_MARGIN },
+                        ]}
+                    >
                         <SurahName
                             surahNumber={currentTrack.surahNumber}
                             fallbackName={currentTrack.surahName}
@@ -464,7 +506,10 @@ export default function PlayerScreen() {
                         <Text
                             style={[
                                 styles.reciterName,
-                                { fontFamily: getFontFamily(arabic, "medium"), fontSize: layout.RECITER_NAME_SIZE },
+                                {
+                                    fontFamily: getFontFamily(arabic, "medium"),
+                                    fontSize: layout.RECITER_NAME_SIZE,
+                                },
                             ]}
                             numberOfLines={1}
                         >
@@ -507,11 +552,21 @@ export default function PlayerScreen() {
                     </View>
 
                     {/* Side Controls (Playback Mode, Sleep Timer & Download) */}
-                    <View style={[styles.sideControlsRow, { marginTop: layout.SIDE_CONTROLS_MARGIN }]}>
+                    <View
+                        style={[
+                            styles.sideControlsRow,
+                            { marginTop: layout.SIDE_CONTROLS_MARGIN },
+                        ]}
+                    >
                         <TouchableOpacity
                             onPress={() => {
                                 setPlaybackMode((prev) => {
-                                    const nextMode = prev === "sequential" ? "shuffle" : prev === "shuffle" ? "repeat" : "sequential"
+                                    const nextMode =
+                                        prev === "sequential"
+                                            ? "shuffle"
+                                            : prev === "shuffle"
+                                            ? "repeat"
+                                            : "sequential"
                                     const modeKey = `mode_${nextMode}` as const
                                     showTooltip(t(modeKey), "left")
                                     return nextMode
@@ -560,7 +615,12 @@ export default function PlayerScreen() {
 
                         <TouchableOpacity
                             onPress={() => {
-                                showTooltip(isDownloaded ? t("downloaded") : t("download"), "right")
+                                showTooltip(
+                                    isDownloaded
+                                        ? t("downloaded")
+                                        : t("download"),
+                                    "right",
+                                )
                                 handleDownloadToggle()
                             }}
                             hitSlop={{
@@ -593,12 +653,26 @@ export default function PlayerScreen() {
 
                     {/* Tooltip */}
                     {tooltipText !== "" && (
-                        <Animated.View style={[
-                            styles.tooltip,
-                            tooltipPosition === "left" ? styles.tooltipLeft : styles.tooltipRight,
-                            tooltipAnimatedStyle
-                        ]}>
-                            <Text style={[styles.tooltipText, { fontFamily: getFontFamily(arabic, "medium") }]}>
+                        <Animated.View
+                            style={[
+                                styles.tooltip,
+                                tooltipPosition === "left"
+                                    ? styles.tooltipLeft
+                                    : styles.tooltipRight,
+                                tooltipAnimatedStyle,
+                            ]}
+                        >
+                            <Text
+                                style={[
+                                    styles.tooltipText,
+                                    {
+                                        fontFamily: getFontFamily(
+                                            arabic,
+                                            "medium",
+                                        ),
+                                    },
+                                ]}
+                            >
                                 {tooltipText}
                             </Text>
                         </Animated.View>
@@ -609,7 +683,10 @@ export default function PlayerScreen() {
                 <View
                     style={[
                         styles.mainControlsRow,
-                        { marginTop: layout.CONTROLS_TOP_MARGIN, marginBottom: layout.CONTROLS_BOTTOM_MARGIN },
+                        {
+                            marginTop: layout.CONTROLS_TOP_MARGIN,
+                            marginBottom: layout.CONTROLS_BOTTOM_MARGIN,
+                        },
                         rtl && styles.mainControlsRowRTL,
                     ]}
                 >
@@ -638,7 +715,14 @@ export default function PlayerScreen() {
                         onPress={togglePlayPause}
                         activeOpacity={0.8}
                     >
-                        <View style={!isPlaying && (rtl ? styles.playIconOffset : styles.playIconOffsetLTR)}>
+                        <View
+                            style={
+                                !isPlaying &&
+                                (rtl
+                                    ? styles.playIconOffset
+                                    : styles.playIconOffsetLTR)
+                            }
+                        >
                             <Ionicons
                                 name={isPlaying ? "pause" : "play"}
                                 size={PLAY_PAUSE_ICON_SIZE}

@@ -418,7 +418,7 @@ export default function ReciterDetailScreen() {
                         hexToRgba(reciter.color_secondary, 0.2),
                         "#121212",
                     ]}
-                    style={[styles.header, { paddingTop: insets.top + 40 }]}
+                    style={[styles.header, { paddingTop: insets.top + 60 }]}
                 >
                     {/* Back Button inside header */}
                     <TouchableOpacity
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     header: {
         alignItems: "center",
         // paddingTop is now applied dynamically based on insets
-        paddingBottom: 40,
+        paddingBottom: 20,
         paddingHorizontal: 20,
     },
     reciterPhoto: {

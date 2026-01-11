@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Localization from 'expo-localization';
 
 // Import translation files
 import en from '../locales/en.json';
@@ -30,7 +29,7 @@ export const isArabic = (): boolean => {
 
 // Helper to get current language
 export const getCurrentLanguage = (): 'ar' | 'en' => {
-  return (i18n.language as 'ar' | 'en') || 'en';
+  return (i18n.language as 'ar' | 'en') || 'ar';
 };
 
 // Helper to change language and persist it
@@ -50,9 +49,8 @@ const getInitialLanguage = async (): Promise<'ar' | 'en'> => {
     console.error('Error loading saved language:', error);
   }
 
-  // Detect device language
-  const deviceLanguage = Localization.getLocales()[0]?.languageCode || 'en';
-  return deviceLanguage === 'ar' ? 'ar' : 'en';
+  // Default to Arabic
+  return 'ar';
 };
 
 // Initialize i18n with detected/saved language
@@ -62,7 +60,7 @@ const initI18n = async () => {
   await i18n.use(initReactI18next).init({
     resources,
     lng: initialLanguage,
-    fallbackLng: 'en',
+    fallbackLng: 'ar',
     compatibilityJSON: 'v4', // For React Native
     interpolation: {
       escapeValue: false,
