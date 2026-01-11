@@ -18,6 +18,7 @@ import { useAudio } from "../src/contexts/AudioContext"
 import { useDownload } from "../src/contexts/DownloadContext"
 import { useSleepTimer } from "../src/contexts/SleepTimerContext"
 import { useNetwork } from "../src/contexts/NetworkContext"
+import { useTheme } from "../src/contexts/ThemeContext"
 import { useTranslation } from "react-i18next"
 import { getReciterPhotoUrl, getAudioUrl } from "../src/constants/config"
 import { isRTL, isArabic } from "../src/services/i18n"
@@ -177,6 +178,7 @@ const TIME_TEXT_OPACITY = 0.6
 export default function PlayerScreen() {
     const router = useRouter()
     const { t } = useTranslation()
+    const { setColors } = useTheme()
     const {
         currentTrack,
         isPlaying,
@@ -206,6 +208,16 @@ export default function PlayerScreen() {
 
     // Sleep timer modal state
     const [sleepTimerModalVisible, setSleepTimerModalVisible] = useState(false)
+
+    // Update theme colors when current track changes
+    useEffect(() => {
+        if (currentTrack) {
+            setColors({
+                statusBar: currentTrack.reciterColorSecondary || '#121212',
+                background: '#121212',
+            })
+        }
+    }, [currentTrack, setColors])
 
     // Debouncing for prev/next buttons
     const isProcessingTrackChange = useRef(false)

@@ -22,6 +22,7 @@ import MiniPlayer from '../src/components/MiniPlayer';
 import OfflineIndicator from '../src/components/OfflineIndicator';
 import { isArabic } from '../src/services/i18n';
 import { getFontFamily } from '../src/utils/fonts';
+import { useTheme } from '../src/contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48) / 2; // 2 columns with padding
@@ -45,6 +46,7 @@ const pickRandomGradient = (): readonly [string, string, string, string] => {
 export default function HomeScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
+  const { setColors } = useTheme();
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [loading, setLoading] = useState(true);
   const arabic = isArabic();
@@ -54,6 +56,13 @@ export default function HomeScreen() {
   useEffect(() => {
     loadReciters();
   }, []);
+
+  // Set theme colors when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      setColors({ statusBar: gradientColors[0], background: '#121212' });
+    }, [gradientColors, setColors])
+  );
 
   // Handle Android hardware back button with double-tap to exit
   useFocusEffect(

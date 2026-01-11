@@ -3,10 +3,12 @@ import { Stack } from "expo-router"
 import { View, Text } from "react-native"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 import * as SplashScreen from "expo-splash-screen"
+import { StatusBar } from "expo-status-bar"
 import { AudioProvider } from "../src/contexts/AudioContext"
 import { DownloadProvider } from "../src/contexts/DownloadContext"
 import { NetworkProvider, useNetwork } from "../src/contexts/NetworkContext"
 import { SleepTimerProvider } from "../src/contexts/SleepTimerContext"
+import { ThemeProvider, useTheme } from "../src/contexts/ThemeContext"
 import "../src/services/i18n"
 
 import { initDatabase } from "../src/services/database"
@@ -26,6 +28,7 @@ SplashScreen.preventAutoHideAsync()
 
 function AppContent() {
     const { isOffline } = useNetwork()
+    const { colors } = useTheme()
 
     // Sync when network becomes available
     useEffect(() => {
@@ -34,24 +37,38 @@ function AppContent() {
         }
     }, [isOffline])
 
+    // Helper to determine status bar style (light/dark text)
+    const getStatusBarStyle = (color: string) => {
+        // Simple brightness check
+        const hex = color.replace("#", "")
+        const r = parseInt(hex.substr(0, 2), 16)
+        const g = parseInt(hex.substr(2, 2), 16)
+        const b = parseInt(hex.substr(4, 2), 16)
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000
+        return brightness > 128 ? "dark" : "light"
+    }
+
     return (
-        <View style={{ flex: 1, backgroundColor: "#121212" }}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+            <StatusBar
+                style={getStatusBarStyle(colors.statusBar)}
+                backgroundColor={colors.statusBar}
+                animated={true}
+            />
             <AudioProvider>
                 <SleepTimerProvider>
                     <DownloadProvider>
-                        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-                            <Stack
-                                screenOptions={{
-                                    headerShown: false,
-                                }}
-                            >
-                                <Stack.Screen name="index" />
-                                <Stack.Screen name="player" />
-                                <Stack.Screen name="reciter/[id]" />
-                                <Stack.Screen name="settings" />
-                                <Stack.Screen name="about" />
-                            </Stack>
-                        </SafeAreaView>
+                        <Stack
+                            screenOptions={{
+                                headerShown: false,
+                            }}
+                        >
+                            <Stack.Screen name="index" />
+                            <Stack.Screen name="player" />
+                            <Stack.Screen name="reciter/[id]" />
+                            <Stack.Screen name="settings" />
+                            <Stack.Screen name="about" />
+                        </Stack>
                     </DownloadProvider>
                 </SleepTimerProvider>
             </AudioProvider>
@@ -114,9 +131,11 @@ export default function RootLayout() {
     return (
         <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
             <SafeAreaProvider>
-                <NetworkProvider>
-                    <AppContent />
-                </NetworkProvider>
+                <ThemeProvider>
+                    <NetworkProvider>
+                        <AppContent />
+                    </NetworkProvider>
+                </ThemeProvider>
             </SafeAreaProvider>
         </View>
     )

@@ -28,7 +28,18 @@
             property="og:description"
             content="استمع للقرآن الكريم بأصوات أشهر القراء. مجاني بالكامل، بدون إعلانات، ويعمل بدون انترنت."
         />
-        <meta property="og:image" content="path/to/your/app-icon.png" />
+        <meta property="og:image" content="./assets/banner.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="تطبيق قارئي - القرآن الكريم" />
+        <meta
+            name="twitter:description"
+            content="استمع للقرآن الكريم بأصوات أشهر القراء. مجاني بالكامل، بدون إعلانات، ويعمل بدون انترنت."
+        />
+        <meta name="twitter:image" content="./assets/banner.png" />
 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -256,31 +267,12 @@
                     </div>
 
                     <div class="relative mx-auto w-full max-w-xs lg:max-w-sm">
-                        <div
-                            class="phone-frame bg-darkCard flex flex-col items-center justify-center"
-                        >
-                            <div class="text-center p-6">
-                                <div
-                                    class="w-20 h-20 bg-primary/20 rounded-full mx-auto mb-4 flex items-center justify-center text-primary"
-                                >
-                                    <svg
-                                        class="w-10 h-10"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                        ></path>
-                                    </svg>
-                                </div>
-                                <p class="text-gray-500 text-sm">
-                                    ضع صورة التطبيق هنا<br />(Screenshot)
-                                </p>
-                            </div>
+                        <div class="phone-frame bg-darkCard overflow-hidden">
+                            <img
+                                src="./assets/hero.png"
+                                alt="تطبيق قارئي - واجهة التطبيق"
+                                class="w-full h-full object-cover"
+                            />
                         </div>
                         <div
                             class="absolute -bottom-6 -right-6 bg-darkCard p-4 rounded-2xl shadow-xl shadow-black/40 animate-bounce"

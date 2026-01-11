@@ -32,6 +32,7 @@ import { useNetwork } from "../../src/contexts/NetworkContext"
 import { Track } from "../../src/services/audioService"
 import MiniPlayer from "../../src/components/MiniPlayer"
 import CircularProgress from "../../src/components/CircularProgress"
+import { useTheme } from "../../src/contexts/ThemeContext"
 
 const { height } = Dimensions.get("window")
 const PHOTO_SIZE = 200
@@ -42,6 +43,7 @@ export default function ReciterDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
     const { t } = useTranslation()
+    const { setColors } = useTheme()
     const { playTrack, playbackMode } = useAudio()
     const {
         downloadSurah,
@@ -94,6 +96,16 @@ export default function ReciterDetailScreen() {
         setSurahs([])
         loadData()
     }, [id, loadData])
+
+    // Update theme colors when reciter loads
+    useEffect(() => {
+        if (reciter) {
+            setColors({
+                statusBar: reciter.color_secondary,
+                background: "#121212",
+            })
+        }
+    }, [reciter, setColors])
 
     // Handle Android hardware back button
     useEffect(() => {
@@ -496,13 +508,17 @@ export default function ReciterDetailScreen() {
                                       allDownloaded
                                           ? t("removing")
                                           : t("downloading")
-                                  }... ${downloadedCount}/${totalCount}`
+                                  } ${downloadedCount}/${totalCount}`
                                 : allDownloaded
                                 ? t("remove_all")
                                 : t("download_all")}
                         </Text>
                         <Ionicons
-                            name={allDownloaded ? "close-circle-outline" : "arrow-down-circle"}
+                            name={
+                                allDownloaded
+                                    ? "close-circle-outline"
+                                    : "arrow-down-circle"
+                            }
                             size={24}
                             color="#efefd5"
                         />
@@ -565,7 +581,7 @@ const styles = StyleSheet.create({
     },
     backButton: {
         position: "absolute",
-        top: 20,
+        top: 40,
         left: 20,
         width: 40,
         height: 40,
